@@ -30,11 +30,17 @@ export default {
       if (this.value.length === 4) {
         const nickname = localStorage.getItem('nickname')
         const phone = getPhone()
-        const password = this.password
+        const password = localStorage.getItem('password')
         const captcha = this.value
-        const { data } = await api.registerFn(captcha, phone, password, nickname)
-        console.log(data)
-        console.log('发送请求')
+        try {
+          const { data } = await api.registerFn(captcha, phone, password, nickname)
+          console.log(data)
+          console.log('注册成功')
+          // 注册成功后跳转到首页
+          this.$router.push('/')
+        } catch (error) {
+          console.log('注册失败:', error)
+        }
       }
     },
     onDelete () {
