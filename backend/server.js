@@ -85,6 +85,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // JWT密钥
 const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
+// 全局变量，用于存储验证码
+const captchaStore = new Map();
+
 // 验证JWT令牌的中间件
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -318,8 +321,95 @@ app.get('/api/cellphone/existence/check', (req, res) => {
 app.get('/api/captcha/sent', (req, res) => {
   const { phone } = req.query;
   
-  // 模拟发送验证码
-  res.status(200).json({ code: 200, message: '验证码发送成功', captcha: '1234' });
+  // 生成4位随机验证码
+  const captcha = Math.floor(1000 + Math.random() * 9000).toString();
+  
+  // 存储验证码，有效期5分钟
+  captchaStore.set(phone, { captcha, expiresAt: Date.now() + 5 * 60 * 1000 });
+  
+  // 这里应该调用短信服务API发送验证码，现在只是模拟
+  console.log(`向手机号 ${phone} 发送验证码: ${captcha}`);
+  
+  res.status(200).json({ code: 200, message: '验证码发送成功', captcha });
+});
+
+// 验证验证码接口
+app.get('/api/captcha/verify', (req, res) => {
+  const { phone, captcha } = req.query;
+  
+  // 检查验证码是否存在
+  const stored = captchaStore.get(phone);
+  if (!stored) {
+    return res.status(400).json({ code: 400, message: '验证码已过期或未发送' });
+  }
+  
+  // 检查验证码是否过期
+  if (Date.now() > stored.expiresAt) {
+    captchaStore.delete(phone);
+    return res.status(400).json({ code: 400, message: '验证码已过期' });
+  }
+  
+  // 检查验证码是否正确
+  if (stored.captcha !== captcha) {
+    return res.status(400).json({ code: 400, message: '验证码错误' });
+  }
+  
+  // 验证成功后删除验证码
+  captchaStore.delete(phone);
+  
+  res.status(200).json({ code: 200, message: '验证码验证成功' });
+});
+
+// 手机号注册接口
+app.get('/api/register/cellphone', (req, res) => {
+  const { phone, captcha, password, nickname } = req.query;
+  
+  // 简单的验证码验证（实际项目中应使用Redis存储验证码）
+  if (!captcha) {
+    return res.status(400).json({ code: 400, message: '验证码不能为空' });
+  }
+  
+  // 验证码已经在验证接口中检查过了，这里不需要再次检查
+   // 但为了安全起见，还是再检查一次
+   const stored = captchaStore.get(phone);
+   if (!stored || Date.now() > stored.expiresAt || stored.captcha !== captcha) {
+     return res.status(400).json({ code: 400, message: '验证码错误或已过期' });
+   }
+  
+  // 检查手机号是否已经注册
+  const checkSql = 'SELECT * FROM users WHERE phone = ?';
+  db.get(checkSql, [phone], (err, row) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '数据库查询错误' });
+    }
+    
+    if (row) {
+      return res.status(400).json({ code: 400, message: '手机号已经被注册' });
+    }
+    
+    // 密码加密
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    
+    // 创建用户
+    const insertSql = 'INSERT INTO users (phone, password, nickname) VALUES (?, ?, ?)';
+    db.run(insertSql, [phone, hashedPassword, nickname], function(err) {
+      if (err) {
+        return res.status(500).json({ code: 500, message: '用户创建失败' });
+      }
+      
+      // 生成JWT令牌
+      const token = jwt.sign({ userId: this.lastID }, secretKey, { expiresIn: '1h' });
+      
+      res.status(200).json({ 
+        code: 200, 
+        message: '注册成功', 
+        data: { 
+          token, 
+          user: { id: this.lastID, phone, nickname } 
+        } 
+      });
+    });
+  });
 });
 
 // 手机号登录接口
@@ -556,6 +646,84 @@ app.get('/api/search/suggest', (req, res) => {
   };
   
   res.status(200).json({ code: 200, message: '获取成功', ...result });
+});
+
+// 用户动态接口
+app.get('/api/user/event', (req, res) => {
+  const { uid } = req.query;
+  // 返回模拟的用户动态数据
+  res.status(200).json({ 
+    code: 200, 
+    message: '获取成功', 
+    events: [
+      { id: 1, time: Date.now(), type: 1, msg: '用户分享了一首歌曲' },
+      { id: 2, time: Date.now() - 3600000, type: 2, msg: '用户收藏了一张专辑' },
+      { id: 3, time: Date.now() - 7200000, type: 3, msg: '用户创建了一个歌单' }
+    ] 
+  });
+});
+
+// 用户歌单接口
+app.get('/api/user/playlist', (req, res) => {
+  const { uid } = req.query;
+  // 返回模拟的用户歌单数据
+  res.status(200).json({ 
+    code: 200, 
+    message: '获取成功', 
+    playlist: [
+      { id: 1, name: '我喜欢的音乐', trackCount: 100, coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' },
+      { id: 2, name: '我的私人FM', trackCount: 50, coverImgUrl: 'https://p2.music.126.net/07e8Z1e7-6e2u8e8e2u8e2u8e8e2u8e2u8e8e2u8e.jpg' },
+      { id: 3, name: '每日推荐', trackCount: 30, coverImgUrl: 'https://p2.music.126.net/1234567890abcdefghijklmnopqrstuvwxyz1234.jpg' }
+    ] 
+  });
+});
+
+// 电台页面的轮播图
+app.get('/api/dj/banner', (req, res) => {
+  // 返回模拟的电台轮播图数据
+  res.status(200).json({ 
+    code: 200, 
+    message: '获取成功', 
+    banners: [
+      { id: 1, imageUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', targetId: 1, targetType: 1004 },
+      { id: 2, imageUrl: 'https://p2.music.126.net/07e8Z1e7-6e2u8e8e2u8e2u8e8e2u8e2u8e8e2u8e.jpg', targetId: 2, targetType: 1004 },
+      { id: 3, imageUrl: 'https://p2.music.126.net/1234567890abcdefghijklmnopqrstuvwxyz1234.jpg', targetId: 3, targetType: 1004 }
+    ] 
+  });
+});
+
+// 用户订阅的电台接口
+app.get('/api/dj/sublist', (req, res) => {
+  // 返回模拟的用户订阅的电台数据
+  res.status(200).json({ 
+    code: 200, 
+    message: '获取成功', 
+    djRadios: [
+      { id: 1, name: '模拟电台1', dj: { nickname: '电台主播1' }, picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' },
+      { id: 2, name: '模拟电台2', dj: { nickname: '电台主播2' }, picUrl: 'https://p2.music.126.net/07e8Z1e7-6e2u8e8e2u8e2u8e8e2u8e2u8e8e2u8e.jpg' },
+      { id: 3, name: '模拟电台3', dj: { nickname: '电台主播3' }, picUrl: 'https://p2.music.126.net/1234567890abcdefghijklmnopqrstuvwxyz1234.jpg' }
+    ] 
+  });
+});
+
+// 用户听歌记录接口
+app.get('/api/user/record', (req, res) => {
+  const { uid } = req.query;
+  // 返回模拟的用户听歌记录数据
+  res.status(200).json({ 
+    code: 200, 
+    message: '获取成功', 
+    weekData: [
+      { song: { name: '歌曲1' }, playCount: 100 },
+      { song: { name: '歌曲2' }, playCount: 80 },
+      { song: { name: '歌曲3' }, playCount: 50 }
+    ],
+    allData: [
+      { song: { name: '歌曲A' }, playCount: 1000 },
+      { song: { name: '歌曲B' }, playCount: 800 },
+      { song: { name: '歌曲C' }, playCount: 500 }
+    ]
+  });
 });
 
 app.listen(port, () => {
