@@ -3,6 +3,9 @@
     <router-link to="phone"
                  tag="button"
                  class="phoneLogin">手机号登陆</router-link>
+    <router-link to="register"
+                 tag="button"
+                 class="registerBtn">注册账号</router-link>
   </div>
 </template>
 

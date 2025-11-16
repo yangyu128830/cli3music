@@ -1,35 +1,26 @@
 <template>
   <div class="prizes-management-wrapper">
-    <general-nav @returnPage="returnPage" class="fixed nav-color">
-      <span class="text">奖品管理</span>
+    <general-nav @returnPage="returnPage">
+      <span class="text">我的奖品</span>
     </general-nav>
-    <div class="container pd23">
-      <div class="prizes-list">
-        <div class="prize-item" v-for="prize in prizes" :key="prize.id">
-          <div class="prize-info">
-            <div class="prize-name">{{ prize.name }}</div>
-            <div class="prize-description">{{ prize.description }}</div>
-            <div class="prize-requirement">
-              <span class="level-require">等级要求：Lv.{{ prize.required_level }}</span>
-              <span class="stock">库存：{{ prize.stock }}</span>
-            </div>
-          </div>
-          <div class="prize-action">
-            <button class="redeem-btn" :disabled="parseInt(prize.stock) <= 0" @click="redeemPrize(prize.id)">
-              <template v-if="parseInt(prize.stock) <= 0">已售罄</template>
-              <template v-else>立即兑换</template>
-            </button>
-          </div>
+
+    <div class="prizes-content pd23">
+      <div class="section-title">已获得的奖品</div>
+      <div class="prizes-grid">
+        <div class="my-prize-item" v-for="(prize, index) in myPrizes" :key="index">
+          <div class="prize-name">{{ prize.name }}</div>
+          <div class="obtained-time">获得时间: {{ prize.obtainedTime }}</div>
         </div>
       </div>
 
-      <div class="my-prizes">
-        <div class="section-title">已获得奖品</div>
-        <div class="prizes-grid">
-          <div class="my-prize-item" v-for="prize in myPrizes" :key="prize.id">
-            <div class="prize-name">{{ prize.name }}</div>
-            <div class="obtained-time">获得时间：{{ prize.obtained_at }}</div>
+      <div class="section-title" style="margin-top: 0.5rem;">兑换记录</div>
+      <div class="exchange-history">
+        <div class="exchange-item" v-for="(record, index) in exchangeHistory" :key="index">
+          <div class="record-info">
+            <span class="record-name">{{ record.prizeName }}</span>
+            <span class="record-time">{{ record.exchangeTime }}</span>
           </div>
+          <div class="record-status">{{ record.status }}</div>
         </div>
       </div>
     </div>
@@ -38,7 +29,6 @@
 
 <script>
 import generalNav from 'base/generalNav'
-import api from 'api'
 
 export default {
   name: 'prizes-management',
@@ -47,154 +37,101 @@ export default {
   },
   data () {
     return {
-      prizes: [],
-      myPrizes: []
+      myPrizes: [],
+      exchangeHistory: []
     }
   },
   mounted () {
-    this.getPrizes()
     this.getMyPrizes()
+    this.getExchangeHistory()
   },
   methods: {
     returnPage () {
       this.$router.go(-1)
     },
-    getPrizes () {
-      api.getPrizesFn().then(res => {
-        if (res.data.code === 200) {
-          this.prizes = res.data.data
-        }
-      }).catch(err => {
-        console.error('获取奖品列表失败:', err)
-      })
-    },
     getMyPrizes () {
-      api.getUserPrizesFn().then(res => {
-        if (res.data.code === 200) {
-          this.myPrizes = res.data.data
-        }
-      }).catch(err => {
-        console.error('获取已获得奖品失败:', err)
-      })
+      // 调用API获取我的奖品
+      // 示例数据
+      this.myPrizes = [
+        { name: '月度VIP', obtainedTime: '2023-05-15' },
+        { name: '现金券', obtainedTime: '2023-05-10' },
+        { name: '周边商品', obtainedTime: '2023-04-25' }
+      ]
     },
-    redeemPrize (prizeId) {
-      api.redeemPrizeFn(prizeId).then(res => {
-        if (res.data.code === 200) {
-          this.$message.success('兑换成功')
-          this.getPrizes()
-          this.getMyPrizes()
-        } else {
-          this.$message.error(res.data.message || '兑换失败')
-        }
-      }).catch(err => {
-        console.error('兑换奖品失败:', err)
-        this.$message.error('兑换失败，请稍后重试')
-      })
+    getExchangeHistory () {
+      // 调用API获取兑换记录
+      // 示例数据
+      this.exchangeHistory = [
+        { prizeName: '月度VIP', exchangeTime: '2023-05-15', status: '已发放' },
+        { prizeName: '现金券', exchangeTime: '2023-05-10', status: '已使用' },
+        { prizeName: '周边商品', exchangeTime: '2023-04-25', status: '已发货' }
+      ]
     }
   }
 }
 </script>
 
-<style scoped lang="less">
+<style lang="less">
 .prizes-management-wrapper {
-  min-height: 100vh;
+  padding-top: 1rem;
   background-color: #f5f5f5;
+  min-height: 100vh;
+}
 
-  .prizes-list {
-    background-color: #fff;
-    border-radius: 0.1rem;
-    padding: 0.3rem;
+.prizes-content {
+  .section-title {
+    font-size: 0.36rem;
+    font-weight: bold;
     margin-bottom: 0.3rem;
+  }
 
-    .prize-item {
+  .prizes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
+    grid-gap: 0.2rem;
+
+    .my-prize-item {
+      padding: 0.2rem;
+      border: 1px solid #eee;
+      border-radius: 0.05rem;
+      box-shadow: 0 0 0.1rem rgba(0, 0, 0, 0.1);
+
+      .prize-name {
+        font-size: 0.32rem;
+        font-weight: bold;
+        margin-bottom: 0.1rem;
+      }
+
+      .obtained-time {
+        font-size: 0.24rem;
+        color: #999;
+      }
+    }
+  }
+
+  .exchange-history {
+    .exchange-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 0.2rem 0;
       border-bottom: 1px solid #eee;
 
-      &:last-child {
-        border-bottom: none;
-      }
-
-      .prize-info {
-        flex: 1;
-
-        .prize-name {
-          font-size: 0.36rem;
-          font-weight: bold;
-          margin-bottom: 0.1rem;
+      .record-info {
+        .record-name {
+          font-size: 0.3rem;
         }
 
-        .prize-description {
-          font-size: 0.28rem;
-          color: #666;
-          margin-bottom: 0.1rem;
-        }
-
-        .prize-requirement {
+        .record-time {
           font-size: 0.24rem;
           color: #999;
-
-          .level-require {
-            margin-right: 0.3rem;
-          }
+          margin-left: 0.2rem;
         }
       }
 
-      .prize-action {
-        margin-left: 0.3rem;
-
-        .redeem-btn {
-          padding: 0.15rem 0.3rem;
-          background-color: #00b42a;
-          color: #fff;
-          border: none;
-          border-radius: 0.05rem;
-          font-size: 0.28rem;
-          cursor: pointer;
-
-          &:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-          }
-        }
-      }
-    }
-  }
-
-  .my-prizes {
-    background-color: #fff;
-    border-radius: 0.1rem;
-    padding: 0.3rem;
-
-    .section-title {
-      font-size: 0.36rem;
-      font-weight: bold;
-      margin-bottom: 0.3rem;
-    }
-
-    .prizes-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(2rem, 1fr));
-      grid-gap: 0.2rem;
-
-      .my-prize-item {
-        padding: 0.2rem;
-        border: 1px solid #eee;
-        border-radius: 0.05rem;
-        box-shadow: 0 0 0.1rem rgba(0, 0, 0, 0.1);
-
-        .prize-name {
-          font-size: 0.32rem;
-          font-weight: bold;
-          margin-bottom: 0.1rem;
-        }
-
-        .obtained-time {
-          font-size: 0.24rem;
-          color: #999;
-        }
+      .record-status {
+        font-size: 0.28rem;
+        color: #1890ff;
       }
     }
   }
