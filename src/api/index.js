@@ -69,7 +69,16 @@ import {
   getVideoDetail,
   getVideoRelated,
   getVideoComments,
-  resourceLike
+  resourceLike,
+  getUserInfo,
+  updateUserInfo,
+  changePassword,
+  checkPassword,
+  recommendNickname,
+  getPoints,
+  getPrizes,
+  getUserPrizes,
+  redeemPrize
 } from './config'
 axios.defaults.withCredentials = true
 export default {
@@ -962,5 +971,71 @@ export default {
         limit
       }
     })
+  },
+  /**
+   * 调用此接口 , 可对 MV,电台,视频点赞
+   * @param {*} id 资源 id
+   * @param {*} type 资源类型,对应以下类型 1: mv 4: 电台 5: 视频 6: 动态
+   */
+  resourceLikeFn (id, type) {
+    return axios.post(resourceLike, { id, type })
+  },
+  /**
+   * 获取用户信息
+   */
+  getUserInfo () {
+    return axios.get(getUserInfo)
+  },
+  /**
+   * 更新用户信息
+   * @param {*} data 用户信息数据
+   */
+  updateUserInfo (data) {
+    return axios.put(updateUserInfo, data)
+  },
+  /**
+   * 修改密码
+   * @param {*} data 密码数据
+   */
+  changePassword (oldPassword, newPassword) {
+    return axios.put(changePassword, { oldPassword, newPassword })
+  },
+  /**
+   * 验证密码
+   * @param {*} password 密码
+   */
+  checkPasswordFn (password) {
+    return axios.post(checkPassword, { password })
+  },
+  /**
+   * 推荐昵称
+   */
+  recommendNickname () {
+    return axios.get(recommendNickname)
+  },
+  /**
+   * 获取积分
+   */
+  getPoints () {
+    return axios.get(getPoints)
+  },
+  /**
+   * 获取奖品列表
+   */
+  getPrizesFn () {
+    return axios.get(getPrizes)
+  },
+  /**
+   * 获取用户奖品
+   */
+  getUserPrizesFn () {
+    return axios.get(getUserPrizes)
+  },
+  /**
+   * 兑换奖品
+   * @param {*} prizeId 奖品id
+   */
+  redeemPrizeFn (prizeId) {
+    return axios.post(redeemPrize, { prizeId })
   }
 }

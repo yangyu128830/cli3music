@@ -37,6 +37,7 @@
           <div class="user-info-right">
             <div class="edit">编辑</div>
             <div class="change-bg">更换背景</div>
+            <div class="change-password" @click="$router.push('/change-password')">修改密码</div>
           </div>
         </div>
       </div>
