@@ -331,5 +331,35 @@ export default new Router({
     path: '/swiper',
     name: 'swiper',
     component: () => import('@/pages/swiperDemo/swiper')
+  },
+  // 会员中心
+  {
+    path: '/member-center',
+    name: 'member-center',
+    component: () => import('@/pages/memberCenter/index')
+  },
+  // 积分管理
+  {
+    path: '/points-management',
+    name: 'points-management',
+    component: () => import('@/pages/pointsManagement/index')
+  },
+  // 奖品管理
+  {
+    path: '/prizes-management',
+    name: 'prizes-management',
+    component: () => import('@/pages/prizesManagement/index')
+  },
+  // 修改密码
+  {
+    path: '/change-password',
+    name: 'change-password',
+    component: () => import('@/pages/changePassword/index')
+  },
+  // 个人资料编辑
+  {
+    path: '/edit-profile',
+    name: 'edit-profile',
+    component: () => import('@/pages/editProfile/index')
   }]
 })

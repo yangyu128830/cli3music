@@ -25,6 +25,14 @@ const createTables = `
     phone TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
     nickname TEXT NOT NULL,
+    avatar TEXT DEFAULT 'http://p1.music.126.net/86ildkNdYbtpJZLyGGsOSg==/109951163982316131.jpg',
+    gender INTEGER DEFAULT 0,
+    birthday TEXT,
+    signature TEXT DEFAULT '',
+    email TEXT,
+    wechat TEXT,
+    level INTEGER DEFAULT 1,
+    points INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
@@ -67,6 +75,25 @@ const createTables = `
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (song_id) REFERENCES songs(id) ON DELETE CASCADE
   );
+  
+  CREATE TABLE IF NOT EXISTS prizes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    required_level INTEGER NOT NULL,
+    stock INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+  
+  CREATE TABLE IF NOT EXISTS user_prizes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    prize_id INTEGER NOT NULL,
+    obtained_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (prize_id) REFERENCES prizes(id) ON DELETE CASCADE
+  );
 `;
 
 db.exec(createTables, (err) => {
@@ -75,6 +102,40 @@ db.exec(createTables, (err) => {
     return;
   }
   console.log('数据库表创建成功');
+  
+  // 插入样例用户数据
+  const insertSampleUsers = `
+    INSERT OR IGNORE INTO users (id, phone, password, nickname, level, points) VALUES 
+    (1, '13800138000', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '测试用户1', 3, 95),
+    (2, '13800138001', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '测试用户2', 2, 85),
+    (3, '13800138002', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '测试用户3', 1, 75);
+  `;
+  
+  db.exec(insertSampleUsers, (err) => {
+    if (err) {
+      console.error('插入样例用户失败:', err);
+      return;
+    }
+    console.log('插入样例用户成功');
+  });
+  
+  // 插入样例奖品数据
+  const insertSamplePrizes = `
+    INSERT OR IGNORE INTO prizes (id, name, description, required_level, stock) VALUES 
+    (1, '豪华VIP', '1个月豪华VIP会员', 3, 100),
+    (2, '普通VIP', '1个月普通VIP会员', 2, 200),
+    (3, '音乐包', '1个月音乐包', 1, 500),
+    (4, '无门槛券', '10元无门槛优惠券', 3, 150),
+    (5, '折扣券', '9折优惠券', 2, 300);
+  `;
+  
+  db.exec(insertSamplePrizes, (err) => {
+    if (err) {
+      console.error('插入样例奖品失败:', err);
+      return;
+    }
+    console.log('插入样例奖品成功');
+  });
 });
 
 // 中间件
@@ -667,9 +728,284 @@ app.get('/api/user/event', (req, res) => {
 app.get('/api/user/playlist', (req, res) => {
   const { uid } = req.query;
   // 返回模拟的用户歌单数据
+  res.status(200).json({
+    code: 200,
+    message: '获取成功',
+    playlists: []
+  });
+});
+
+// 获取用户信息
+app.get('/api/user/info', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  
+  const sql = 'SELECT * FROM users WHERE id = ?';
+  db.get(sql, [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    if (!user) {
+      return res.status(404).json({ code: 404, message: '用户不存在' });
+    }
+    
+    // 移除敏感信息
+    delete user.password;
+    res.status(200).json({ code: 200, message: '获取成功', user });
+  });
+});
+
+// 更新用户信息
+app.put('/api/user/info', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const { nickname, avatar, gender, birthday, signature, email, wechat } = req.body;
+  
+  const sql = 'UPDATE users SET nickname = ?, avatar = ?, gender = ?, birthday = ?, signature = ?, email = ?, wechat = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+  db.run(sql, [nickname, avatar, gender, birthday, signature, email, wechat, userId], (err) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    res.status(200).json({ code: 200, message: '更新成功' });
+  });
+});
+
+// 修改密码
+app.put('/api/user/password', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const { oldPassword, newPassword } = req.body;
+  
+  // 验证旧密码
+  const sql = 'SELECT password FROM users WHERE id = ?';
+  db.get(sql, [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    if (!user) {
+      return res.status(404).json({ code: 404, message: '用户不存在' });
+    }
+    
+    // 检查旧密码是否正确
+    bcrypt.compare(oldPassword, user.password, (err, isMatch) => {
+      if (err) {
+        return res.status(500).json({ code: 500, message: '服务器错误' });
+      }
+      if (!isMatch) {
+        return res.status(400).json({ code: 400, message: '旧密码错误' });
+      }
+      
+      // 加密新密码
+      bcrypt.hash(newPassword, 10, (err, hashedPassword) => {
+        if (err) {
+          return res.status(500).json({ code: 500, message: '服务器错误' });
+        }
+        
+        // 更新密码
+        const updateSql = 'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+        db.run(updateSql, [hashedPassword, userId], (err) => {
+          if (err) {
+            return res.status(500).json({ code: 500, message: '服务器错误' });
+          }
+          res.status(200).json({ code: 200, message: '密码修改成功' });
+        });
+      });
+    });
+  });
+});
+
+// 检测密码安全性
+app.post('/api/user/check-password', (req, res) => {
+  const { password } = req.body;
+  let strength = 0;
+  let message = '';
+  
+  // 密码长度检查
+  if (password.length >= 8) strength += 1;
+  // 包含数字检查
+  if (/\d/.test(password)) strength += 1;
+  // 包含字母检查
+  if (/[a-zA-Z]/.test(password)) strength += 1;
+  // 包含特殊字符检查
+  if (/[^a-zA-Z0-9]/.test(password)) strength += 1;
+  
+  if (strength <= 1) {
+    message = '密码强度：弱';
+  } else if (strength === 2) {
+    message = '密码强度：中';
+  } else if (strength >= 3) {
+    message = '密码强度：强';
+  }
+  
+  res.status(200).json({ code: 200, message, strength });
+});
+
+// AI智能推荐昵称
+app.get('/api/user/recommend-nickname', (req, res) => {
+  const nicknames = [
+    '音乐爱好者', '旋律使者', '节奏大师', '音浪先锋', '乐符精灵',
+    '星空舞者', '月光歌手', '阳光音乐人', '梦幻乐手', '激情鼓手',
+    '优雅钢琴家', '摇滚青年', '古典爱好者', '流行达人', '爵士迷'
+  ];
+  // 随机推荐3个昵称
+  const recommended = [];
+  const usedIndices = new Set();
+  while (recommended.length < 3 && recommended.length < nicknames.length) {
+    const index = Math.floor(Math.random() * nicknames.length);
+    if (!usedIndices.has(index)) {
+      usedIndices.add(index);
+      recommended.push(nicknames[index]);
+    }
+  }
+  res.status(200).json({ code: 200, message: '获取成功', nicknames: recommended });
+});
+
+// 获取积分记录
+app.get('/api/points', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  // 返回模拟的积分记录
+  res.status(200).json({ code: 200, message: '获取成功', points: req.user.points, records: [] });
+});
+
+// 获取奖品列表
+app.get('/api/prizes', authenticateToken, (req, res) => {
+  const sql = 'SELECT * FROM prizes ORDER BY required_level DESC';
+  db.all(sql, [], (err, prizes) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    res.status(200).json({ code: 200, message: '获取成功', prizes });
+  });
+});
+
+// 获取用户已获得奖品
+app.get('/api/user/prizes', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const sql = `
+    SELECT p.*, up.obtained_at FROM user_prizes up
+    JOIN prizes p ON up.prize_id = p.id
+    WHERE up.user_id = ?
+  `;
+  db.all(sql, [userId], (err, prizes) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    res.status(200).json({ code: 200, message: '获取成功', prizes });
+  });
+});
+
+// 兑换奖品
+app.post('/api/prizes/redeem', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const { prizeId } = req.body;
+  
+  // 检查奖品是否存在
+  const checkPrizeSql = 'SELECT * FROM prizes WHERE id = ? AND stock > 0';
+  db.get(checkPrizeSql, [prizeId], (err, prize) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    if (!prize) {
+      return res.status(400).json({ code: 400, message: '奖品不存在或已售罄' });
+    }
+    
+    // 检查用户等级是否满足
+    const checkUserSql = 'SELECT level FROM users WHERE id = ?';
+    db.get(checkUserSql, [userId], (err, user) => {
+      if (err) {
+        return res.status(500).json({ code: 500, message: '服务器错误' });
+      }
+      if (user.level < prize.required_level) {
+        return res.status(400).json({ code: 400, message: '等级不足，无法兑换' });
+      }
+      
+      // 扣减库存
+      const updateStockSql = 'UPDATE prizes SET stock = stock - 1 WHERE id = ?';
+      db.run(updateStockSql, [prizeId], (err) => {
+        if (err) {
+          return res.status(500).json({ code: 500, message: '服务器错误' });
+        }
+        
+        // 记录用户奖品
+        const insertPrizeSql = 'INSERT INTO user_prizes (user_id, prize_id) VALUES (?, ?)';
+        db.run(insertPrizeSql, [userId, prizeId], (err) => {
+          if (err) {
+            return res.status(500).json({ code: 500, message: '服务器错误' });
+          }
+          res.status(200).json({ code: 200, message: '兑换成功' });
+        });
+      });
+    });
+  });
+});
+
+// 会员等级管理
+app.get('/api/admin/users', authenticateToken, (req, res) => {
+  const sql = 'SELECT id, phone, nickname, level, points FROM users';
+  db.all(sql, [], (err, users) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    res.status(200).json({ code: 200, message: '获取成功', users });
+  });
+});
+
+// 更新会员等级
+app.put('/api/admin/users/:id/level', authenticateToken, (req, res) => {
+  const userId = req.params.id;
+  const { level } = req.body;
+  
+  const sql = 'UPDATE users SET level = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+  db.run(sql, [level, userId], (err) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    res.status(200).json({ code: 200, message: '等级更新成功' });
+  });
+});
+
+// 奖品管理接口
+app.post('/api/admin/prizes', authenticateToken, (req, res) => {
+  const { name, description, required_level, stock } = req.body;
+  
+  const sql = 'INSERT INTO prizes (name, description, required_level, stock) VALUES (?, ?, ?, ?)';
+  db.run(sql, [name, description, required_level, stock], (err) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    res.status(200).json({ code: 200, message: '奖品添加成功' });
+  });
+});
+
+app.put('/api/admin/prizes/:id', authenticateToken, (req, res) => {
+  const prizeId = req.params.id;
+  const { name, description, required_level, stock } = req.body;
+  
+  const sql = 'UPDATE prizes SET name = ?, description = ?, required_level = ?, stock = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
+  db.run(sql, [name, description, required_level, stock, prizeId], (err) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    res.status(200).json({ code: 200, message: '奖品更新成功' });
+  });
+});
+
+app.delete('/api/admin/prizes/:id', authenticateToken, (req, res) => {
+  const prizeId = req.params.id;
+  
+  const sql = 'DELETE FROM prizes WHERE id = ?';
+  db.run(sql, [prizeId], (err) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    res.status(200).json({ code: 200, message: '奖品删除成功' });
+  });
+});
+
+// 用户歌单接口（已修复重复定义）
+app.get('/api/user/playlist', (req, res) => {
+  const { uid } = req.query;
+  // 返回模拟的用户歌单数据
   res.status(200).json({ 
-    code: 200, 
-    message: '获取成功', 
+      code: 200, 
+      message: '获取成功', 
     playlist: [
       { id: 1, name: '我喜欢的音乐', trackCount: 100, coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' },
       { id: 2, name: '我的私人FM', trackCount: 50, coverImgUrl: 'https://p2.music.126.net/07e8Z1e7-6e2u8e8e2u8e2u8e8e2u8e2u8e8e2u8e.jpg' },
