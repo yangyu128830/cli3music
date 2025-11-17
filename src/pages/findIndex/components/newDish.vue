@@ -30,7 +30,7 @@
            v-show="type==='newSong'">
         <img-card v-for="(item, index) in newSongsList"
                   :key="index"
-                  :imgUrl="item.album ? item.album.blurPicUrl : ''"
+                  :imgUrl="item.album.blurPicUrl"
                   :dec="item.name"
                   @click.native="beginAudio(item)"></img-card>
       </div>
