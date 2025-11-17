@@ -142,9 +142,11 @@ export default {
         .then(res => {
           if (res.data.code === 502) {
             this.error()
-          } else {
+          } else if (res.data.code === 200) {
             console.log(res)
             localStorage.setItem('account', phone)
+            // 存储token
+            localStorage.setItem('token', res.data.data.token)
             this.success()
           }
         })
