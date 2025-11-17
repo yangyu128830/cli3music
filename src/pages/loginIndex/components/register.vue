@@ -137,24 +137,22 @@ export default {
           }
 
           // 调用注册API
-          api.register({
-            phone: this.phone,
-            password: this.password,
-            nickname: this.nickname
-          }).then(res => {
-            if (res.code === 200) {
-              // 注册成功，保存用户信息
-              localStorage.setItem('loginState', 1)
-              localStorage.setItem('avatarUrl', res.user.avatar)
-              localStorage.setItem('nickname', res.user.nickname)
-              localStorage.setItem('accountUid', res.user.id)
-              this.$store.commit('LOGIN_STATE', 1)
-              this.$store.commit('ACCOUNT_UID', res.user.id)
-              this.$router.push('/home')
-            } else {
-              this.alertEvent(res.message || '注册失败')
-            }
-          }).catch(err => {
+          api.register({ phone: this.phone, password: this.password, nickname: this.nickname })
+            .then(res => {
+              if (res.data.code === 200) {
+                // 注册成功，保存用户信息
+                localStorage.setItem('loginState', 1)
+                localStorage.setItem('avatarUrl', res.data.data.user.avatar || '')
+                localStorage.setItem('nickname', res.data.data.user.nickname)
+                localStorage.setItem('accountUid', res.data.data.user.id)
+                localStorage.setItem('token', res.data.data.token)
+                this.$store.commit('LOGIN_STATE', 1)
+                this.$store.commit('ACCOUNT_UID', res.data.data.user.id)
+                this.$router.push('/home')
+              } else {
+                this.alertEvent(res.data.message || '注册失败')
+              }
+            }).catch(err => {
             this.alertEvent('注册失败，请稍后重试')
           })
         }

@@ -142,6 +142,7 @@ db.exec(createTables, (err) => {
 // 配置跨域
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') {
@@ -235,13 +236,13 @@ app.get('/api/recommend/songList', (req, res) => {
 app.get('/api/banner', (req, res) => {
   // 模拟轮播图数据
   const banners = [
-    { id: 1, imageUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', targetId: 1, targetType: 1000 },
-    { id: 2, imageUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', targetId: 2, targetType: 1000 },
-    { id: 3, imageUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', targetId: 3, targetType: 1000 }
+    { id: 1, pic: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', typeTitle: '热门推荐', titleColor: '#FF5722' },
+    { id: 2, pic: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', typeTitle: '新歌速递', titleColor: '#4CAF50' },
+    { id: 3, pic: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', typeTitle: '排行榜', titleColor: '#2196F3' }
   ];
   
   res.status(200).json({ code: 200, message: '获取成功', banners });
-});
+})
 
 // 获取推荐歌单接口
 app.get('/api/top/playlist', (req, res) => {
@@ -379,12 +380,12 @@ app.get('/api/playlist/detail', (req, res) => {
 // 获取每日推荐歌单接口
 app.get('/api/recommend/resource', (req, res) => {
   // 模拟每日推荐歌单数据
-  const recommends = [
+  const recommend = [
     { id: 1, name: '每日推荐', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', playCount: 123456 },
     { id: 2, name: '个性化推荐', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', playCount: 789012 }
   ];
   
-  res.status(200).json({ code: 200, message: '获取成功', recommends });
+  res.status(200).json({ code: 200, message: '获取成功', recommend });
 });
 
 // 获取新碟接口
@@ -643,8 +644,8 @@ app.get('/api/top/song', (req, res) => {
   
   // 模拟新歌数据
   const data = [
-    { id: 1, name: '新歌1', ar: [{ name: '歌手1' }], al: { name: '专辑1', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } },
-    { id: 2, name: '新歌2', ar: [{ name: '歌手2' }], al: { name: '专辑2', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } }
+    { id: 1, name: '新歌1', ar: [{ name: '歌手1' }], album: { name: '专辑1', blurPicUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } },
+    { id: 2, name: '新歌2', ar: [{ name: '歌手2' }], album: { name: '专辑2', blurPicUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } }
   ];
   
   res.status(200).json({ code: 200, message: '获取成功', data });

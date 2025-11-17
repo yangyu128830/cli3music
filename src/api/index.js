@@ -1,5 +1,19 @@
 import axios from 'axios'
 
+// 添加请求拦截器
+axios.interceptors.request.use(config => {
+  // 从localStorage获取令牌
+  const token = localStorage.getItem('token')
+  // 如果令牌存在，添加到请求头
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+}, error => {
+  // 处理请求错误
+  return Promise.reject(error)
+})
+
 import {
   albumCollec,
   bannerSwiper,
