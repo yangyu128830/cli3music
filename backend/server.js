@@ -180,45 +180,7 @@ const authenticateToken = (req, res, next) => {
 
 // 注册接口（已移至下方完整实现）
 
-// 登录接口
-app.get('/api/login/cellphone', (req, res) => {
-  const { phone, password } = req.query;
-  
-  if (!phone || !password) {
-    return res.status(400).json({ code: 400, message: '手机号和密码不能为空' });
-  }
-  
-  // 查询用户
-  const sql = 'SELECT * FROM users WHERE phone = ?';
-  db.get(sql, [phone], (err, user) => {
-    if (err) {
-      return res.status(500).json({ code: 500, message: '数据库查询错误' });
-    }
-    
-    if (!user) {
-      return res.status(400).json({ code: 400, message: '用户名或密码错误' });
-    }
-    
-    // 验证密码
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-    
-    if (!isPasswordValid) {
-      return res.status(400).json({ code: 400, message: '用户名或密码错误' });
-    }
-    
-    // 生成JWT令牌
-    const token = jwt.sign({ userId: user.id }, secretKey, { expiresIn: '1h' });
-    
-    res.status(200).json({ 
-      code: 200, 
-      message: '登录成功', 
-      data: { 
-        token, 
-        user: { id: user.id, phone: user.phone, nickname: user.nickname } 
-      } 
-    });
-  });
-});
+
 
 // 获取推荐歌单接口
 app.get('/api/recommend/songList', (req, res) => {
@@ -663,7 +625,7 @@ app.get('/api/cellphone/existence/check', (req, res) => {
       return res.status(500).json({ code: 500, message: '数据库查询错误' });
     }
     
-    res.status(200).json({ code: 200, message: '获取成功', exist: !!row ? 1 : -1 });
+    res.status(200).json({ code: 200, message: '获取成功', exists: !!row });
   });
 });
 
@@ -680,26 +642,7 @@ app.get('/api/captcha/sent', (req, res) => {
   res.status(200).json({ code: 200, message: '验证码发送成功', captcha });
 });
 
-// 验证验证码接口
-app.get('/api/captcha/verify', (req, res) => {
-  const { phone, captcha } = req.query;
-  
-  // 检查验证码
-  const captchaData = captchaStore.get(phone);
-  
-  if (!captchaData) {
-    return res.status(400).json({ code: 400, message: '验证码不存在或已过期' });
-  }
-  
-  if (captchaData.captcha !== captcha) {
-    return res.status(400).json({ code: 400, message: '验证码错误' });
-  }
-  
-  // 验证码正确，删除验证码
-  captchaStore.delete(phone);
-  
-  res.status(200).json({ code: 200, message: '验证码验证成功' });
-});
+
 
 // 获取每日推荐歌曲接口
 app.get('/api/recommend/songs', authenticateToken, (req, res) => {
@@ -854,38 +797,18 @@ app.get('/api/login/cellphone', (req, res) => {
   });
 });
 
+// 登录状态接口
+app.get('/api/login/status', (req, res) => {
+  // 模拟登录状态
+  res.status(200).json({ code: 200, message: '获取成功', data: { account: { id: 123456 }, profile: { nickname: '模拟用户' } } });
+});
+
 // 用户详情接口
 app.get('/api/user/detail', (req, res) => {
   const { uid } = req.query;
   
-  if (!uid) {
-    return res.status(400).json({ code: 400, message: '用户ID不能为空' });
-  }
-  
-  // 查询用户详情
-  const sql = 'SELECT * FROM users WHERE id = ?';
-  db.get(sql, [uid], (err, user) => {
-    if (err) {
-      return res.status(500).json({ code: 500, message: '数据库查询错误' });
-    }
-    
-    if (!user) {
-      return res.status(404).json({ code: 404, message: '用户不存在' });
-    }
-    
-    res.status(200).json({ 
-      code: 200, 
-      message: '获取成功', 
-      profile: { 
-        id: user.id, 
-        nickname: user.nickname, 
-        avatarUrl: user.avatar, 
-        phone: user.phone, 
-        level: user.level
-      },
-      level: user.level
-    });
-  });
+  // 模拟用户详情
+  res.status(200).json({ code: 200, message: '获取成功', profile: { id: uid || 123456, nickname: '模拟用户', avatarUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } });
 });
 
 // 签到接口
@@ -898,6 +821,55 @@ app.get('/api/daily_signin', (req, res) => {
 app.get('/api/logout', (req, res) => {
   // 模拟退出登录
   res.status(200).json({ code: 200, message: '退出登录成功' });
+});
+
+// 检查密码强度接口
+app.post('/api/user/check-password', (req, res) => {
+  const { password } = req.body;
+  let strength = 0;
+  
+  // 简单的密码强度检测
+  if (password.length >= 6) strength++;
+  if (/[a-zA-Z]/.test(password)) strength++;
+  if (/[0-9]/.test(password)) strength++;
+  if (/[^a-zA-Z0-9]/.test(password)) strength++;
+  
+  res.status(200).json({ code: 200, strength: strength, message: '密码强度检测成功' });
+});
+
+// AI推荐昵称接口
+app.get('/api/user/recommend-nickname', (req, res) => {
+  // 简单的随机昵称生成
+  const prefixes = ['音乐', '旋律', '音符', '节奏', '和弦'];
+  const suffixes = ['爱好者', '迷', '达人', '玩家', '大师'];
+  const nicknames = [];
+  
+  for (let i = 0; i < 5; i++) {
+    const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+    const number = Math.floor(Math.random() * 1000);
+    nicknames.push(prefix + suffix + number);
+  }
+  
+  res.status(200).json({ code: 200, nicknames: nicknames, message: '昵称推荐成功' });
+});
+
+// 获取用户信息接口
+app.get('/api/user/info', authenticateToken, (req, res) => {
+  const userId = req.user.userId;
+  
+  const sql = 'SELECT id, phone, nickname, avatar, gender, birthday, signature, email, wechat, level, points FROM users WHERE id = ?';
+  db.get(sql, [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '数据库查询错误' });
+    }
+    
+    if (!user) {
+      return res.status(404).json({ code: 404, message: '用户不存在' });
+    }
+    
+    res.status(200).json({ code: 200, user: user, message: '获取用户信息成功' });
+  });
 });
 
 // 获取每日推荐歌曲接口
