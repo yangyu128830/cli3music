@@ -958,7 +958,7 @@ export default {
   /**
    * 获取奖品列表
    */
-  getPrizesFn () {
+  getPrizes () {
     return axios.get(getPrizes)
   },
   /**
@@ -971,7 +971,7 @@ export default {
    * 兑换奖品
    * @param {*} prizeId 奖品id
    */
-  redeemPrizeFn (prizeId) {
+  redeemPrize (prizeId) {
     return axios.post(redeemPrize, { prizeId })
   },
   getExchangeHistory () {
