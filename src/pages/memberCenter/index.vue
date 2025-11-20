@@ -76,9 +76,11 @@ export default {
     },
     getUserInfo () {
       api.getUserInfo().then(res => {
-        if (res.code === 200) {
+        if (res && res.code === 200) {
           this.userInfo = res.user
         }
+      }).catch(err => {
+        console.error('获取用户信息失败:', err)
       })
     },
     getLevelName (points) {

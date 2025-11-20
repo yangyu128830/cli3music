@@ -66,10 +66,12 @@ export default {
     },
     getPointsInfo () {
       api.getPoints().then(res => {
-        if (res.code === 200) {
+        if (res && res.code === 200) {
           this.totalPoints = res.points
           this.pointsRecords = res.records
         }
+      }).catch(err => {
+        console.error('获取积分信息失败:', err)
       })
     },
     getLevelName (points) {

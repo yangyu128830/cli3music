@@ -29,6 +29,7 @@
 
 <script>
 import generalNav from 'base/generalNav'
+import api from 'api'
 
 export default {
   name: 'prizes-management',
@@ -51,16 +52,20 @@ export default {
     },
     getMyPrizes () {
       // 调用API获取我的奖品
-      // 示例数据
-      this.myPrizes = [
-        { name: '月度VIP', obtainedTime: '2023-05-15' },
-        { name: '现金券', obtainedTime: '2023-05-10' },
-        { name: '周边商品', obtainedTime: '2023-04-25' }
-      ]
+      api.getUserPrizes().then(res => {
+        if (res.data && res.data.code === 200) {
+          this.myPrizes = res.data.prizes.map(prize => ({
+            name: prize.name,
+            obtainedTime: new Date(prize.obtained_at).toLocaleDateString()
+          }))
+        }
+      }).catch(err => {
+        console.error('获取我的奖品失败:', err)
+      })
     },
     getExchangeHistory () {
       // 调用API获取兑换记录
-      // 示例数据
+      // 注意：当前后端没有专门的兑换记录接口，暂时使用示例数据
       this.exchangeHistory = [
         { prizeName: '月度VIP', exchangeTime: '2023-05-15', status: '已发放' },
         { prizeName: '现金券', exchangeTime: '2023-05-10', status: '已使用' },
