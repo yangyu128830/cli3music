@@ -84,21 +84,58 @@ export default {
   },
   computed: {
     canRegister () {
-      return this.phone && this.password && this.confirmPassword && this.nickname && this.captcha
+      return this.phone && this.password && this.confirmPassword && this.nickname && this.captcha && !this.errorMsg
     }
   },
   methods: {
     returnPage () {
       this.$router.go(-1)
     },
-    handlePhoneInput () {
-      // 简单的手机号格式验证
+    validatePhone () {
+      // 手机号格式验证
       const phoneRegex = /^1[3456789]\d{9}$/
       if (!phoneRegex.test(this.phone)) {
         this.errorMsg = '请输入正确的手机号'
-      } else {
-        this.errorMsg = ''
+        return false
       }
+      return true
+    },
+    validatePassword () {
+      // 密码强度校验：至少8位，包含字母和数字
+      const passwordRegex = /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{8,}$/
+      if (!passwordRegex.test(this.password)) {
+        this.errorMsg = '密码至少8位，包含字母和数字'
+        return false
+      }
+      return true
+    },
+    validateConfirmPassword () {
+      // 确认密码验证
+      if (this.password !== this.confirmPassword) {
+        this.errorMsg = '两次输入的密码不一致'
+        return false
+      }
+      return true
+    },
+    validateNickname () {
+      // 昵称验证：2-10个字符
+      if (this.nickname.length < 2 || this.nickname.length > 10) {
+        this.errorMsg = '昵称长度为2-10个字符'
+        return false
+      }
+      return true
+    },
+    validateCaptcha () {
+      // 验证码验证：6位数字
+      const captchaRegex = /^\d{6}$/
+      if (!captchaRegex.test(this.captcha)) {
+        this.errorMsg = '请输入6位数字验证码'
+        return false
+      }
+      return true
+    },
+    handlePhoneInput () {
+      this.validatePhone()
     },
     sendCaptcha () {
       const phoneRegex = /^1[3456789]\d{9}$/
@@ -142,24 +179,23 @@ export default {
       this.captchaText = '发送验证码'
     },
     handleRegister () {
-      // 验证密码是否一致
-      if (this.password !== this.confirmPassword) {
-        this.errorMsg = '两次输入的密码不一致'
+      // 表单验证
+      if (!this.validatePhone() || !this.validatePassword() || !this.validateConfirmPassword() || !this.validateNickname() || !this.validateCaptcha()) {
         return
       }
       
       // 调用注册接口
-      api.register(this.phone, this.password, this.nickname, this.captcha).then(res => {
-        if (res && res.code === 200) {
+      api.registerFn(this.captcha, this.phone, this.password, this.nickname).then(res => {
+        if (res && res.data && res.data.code === 200) {
           // 注册成功，跳转到登录页面
           this.$router.push('/login')
           this.$toast('注册成功')
         } else {
-          this.errorMsg = res.message || '注册失败'
+          this.errorMsg = res.data.message || '注册失败'
         }
       }).catch(err => {
         console.error('注册失败:', err)
-        this.errorMsg = '注册失败'
+        this.errorMsg = '注册失败，请稍后重试'
       })
     }
   }

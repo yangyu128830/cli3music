@@ -342,7 +342,7 @@ app.get('/api/top/playlist/highquality', (req, res) => {
   res.status(200).json({ code: 200, message: '获取成功', playlists });
 });
 
-// 获取登录状态接口
+// 获取登录状态接口 - 已修复重复路由问题
 app.get('/api/login/status', authenticateToken, (req, res) => {
   // 查询用户信息
   const sql = 'SELECT * FROM users WHERE id = ?';
@@ -403,35 +403,60 @@ app.get('/api/user/detail', (req, res) => {
   });
 });
 
-// 获取所有榜单内容摘要接口
+// 获取所有榜单内容摘要接口 - 已完善数据
 app.get('/api/toplist/detail', (req, res) => {
-  // 模拟榜单数据
+  // 完善的榜单数据
   const list = [
-    { id: 1, name: '飙升榜', updateFrequency: '实时', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
-    { id: 2, name: '新歌榜', updateFrequency: '每日', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
-    { id: 3, name: '热歌榜', updateFrequency: '每周', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 }
+    { id: 0, name: '云音乐新歌榜', updateFrequency: '每日', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 1, name: '云音乐热歌榜', updateFrequency: '每日', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 2, name: '网易原创歌曲榜', updateFrequency: '每周', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 3, name: '云音乐飙升榜', updateFrequency: '实时', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 4, name: '云音乐国电榜', updateFrequency: '每周', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 5, name: 'UK排行榜周榜', updateFrequency: '每周', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 6, name: '美国Billboard周榜', updateFrequency: '每周', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 7, name: 'KTV唛榜', updateFrequency: '每周', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 8, name: 'iTunes榜', updateFrequency: '每日', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 },
+    { id: 9, name: '日本Oricon周榜', updateFrequency: '每周', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', trackCount: 100 }
   ];
   
   res.status(200).json({ code: 200, message: '获取成功', list });
 });
 
-// 获取排行榜接口
+// 获取排行榜接口 - 已完善数据
 app.get('/api/top/list', (req, res) => {
-  const { idx } = req.query;
+  const { idx = 1 } = req.query;
   
-  // 模拟排行榜数据
-  const playlist = {
-    id: idx || 1,
-    name: '排行榜',
-    tracks: [
-      { id: 1, name: '歌曲1', ar: [{ name: '歌手1' }], al: { name: '专辑1', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } },
-      { id: 2, name: '歌曲2', ar: [{ name: '歌手2' }], al: { name: '专辑2', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } },
-      { id: 3, name: '歌曲3', ar: [{ name: '歌手3' }], al: { name: '专辑3', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } }
-    ]
+  // 根据不同的idx返回不同的排行榜数据
+  const playlists = {
+    '0': { id: 0, name: '云音乐新歌榜', tracks: generateSongs(100, '新歌榜') },
+    '1': { id: 1, name: '云音乐热歌榜', tracks: generateSongs(100, '热歌榜') },
+    '2': { id: 2, name: '网易原创歌曲榜', tracks: generateSongs(100, '原创榜') },
+    '3': { id: 3, name: '云音乐飙升榜', tracks: generateSongs(100, '飙升榜') },
+    '4': { id: 4, name: '云音乐国电榜', tracks: generateSongs(100, '国电榜') },
+    default: { id: parseInt(idx), name: `排行榜${idx}`, tracks: generateSongs(50, `榜${idx}`) }
   };
   
+  const playlist = playlists[idx] || playlists.default;
   res.status(200).json({ code: 200, message: '获取成功', playlist });
 });
+
+// 生成模拟歌曲数据的函数
+function generateSongs(count, prefix) {
+  const songs = [];
+  for (let i = 1; i <= count; i++) {
+    songs.push({
+      id: i,
+      name: `${prefix}歌曲${i}`,
+      ar: [{ name: `${prefix}歌手${i}` }],
+      al: { 
+        name: `${prefix}专辑${i}`, 
+        picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' 
+      },
+      duration: 180 + Math.floor(Math.random() * 120) // 180-300秒
+    });
+  }
+  return songs;
+}
 
 // 获取歌单详情接口
 app.get('/api/playlist/detail', (req, res) => {
@@ -552,12 +577,14 @@ app.get('/api/likelist', (req, res) => {
   });
 });
 
-// 用户信息
+// 用户信息 - 已修复统一响应格式
 app.get('/api/user/subcount', (req, res) => {
   res.status(200).json({
     code: 200,
     message: '获取用户信息成功',
-    playlistCount: 0, followedCount: 0, followerCount: 0
+    data: {
+      playlistCount: 0, followedCount: 0, followerCount: 0
+    }
   });
 });
 
@@ -632,6 +659,98 @@ app.get('/api/dj/sublist', (req, res) => {
     code: 200,
     message: '获取订阅的电台成功',
     data: []
+  });
+});
+
+// 奖品列表接口
+app.get('/api/prizes/list', (req, res) => {
+  // 查询所有奖品
+  const sql = 'SELECT * FROM prizes';
+  db.all(sql, [], (err, prizes) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '数据库查询错误' });
+    }
+    
+    res.status(200).json({ 
+      code: 200, 
+      message: '获取奖品列表成功', 
+      data: prizes
+    });
+  });
+});
+
+// 我的奖品接口 - 需要登录
+app.get('/api/user/prizes', authenticateToken, (req, res) => {
+  const { userId } = req.user;
+  
+  // 查询用户已获得的奖品
+  const sql = `
+    SELECT prizes.*, user_prizes.obtained_at 
+    FROM user_prizes 
+    JOIN prizes ON user_prizes.prize_id = prizes.id 
+    WHERE user_prizes.user_id = ?
+  `;
+  db.all(sql, [userId], (err, prizes) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '数据库查询错误' });
+    }
+    
+    res.status(200).json({ 
+      code: 200, 
+      message: '获取我的奖品成功', 
+      data: prizes
+    });
+  });
+});
+
+// 兑换奖品接口 - 需要登录
+app.post('/api/prizes/exchange', authenticateToken, (req, res) => {
+  const { userId } = req.user;
+  const { prizeId } = req.body;
+  
+  // 检查奖品是否存在且有库存
+  const checkPrizeSql = 'SELECT * FROM prizes WHERE id = ?';
+  db.get(checkPrizeSql, [prizeId], (err, prize) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '数据库查询错误' });
+    }
+    
+    if (!prize || prize.stock <= 0) {
+      return res.status(400).json({ code: 400, message: '奖品不存在或已售罄' });
+    }
+    
+    // 检查用户是否已兑换过该奖品
+    const checkUserPrizeSql = 'SELECT * FROM user_prizes WHERE user_id = ? AND prize_id = ?';
+    db.get(checkUserPrizeSql, [userId, prizeId], (err, userPrize) => {
+      if (err) {
+        return res.status(500).json({ code: 500, message: '数据库查询错误' });
+      }
+      
+      if (userPrize) {
+        return res.status(400).json({ code: 400, message: '您已兑换过该奖品' });
+      }
+      
+      // 更新奖品库存
+      const updatePrizeSql = 'UPDATE prizes SET stock = stock - 1 WHERE id = ?';
+      db.run(updatePrizeSql, [prizeId], (err) => {
+        if (err) {
+          return res.status(500).json({ code: 500, message: '数据库更新错误' });
+        }
+        
+        // 记录用户兑换
+        const insertUserPrizeSql = 'INSERT INTO user_prizes (user_id, prize_id) VALUES (?, ?)';
+        db.run(insertUserPrizeSql, [userId, prizeId], (err) => {
+          if (err) {
+            return res.status(500).json({ code: 500, message: '数据库插入错误' });
+          }
+          
+          res.status(200).json({ 
+            code: 200, 
+            message: '兑换成功' 
+          });
+        });
+      });
+    });
   });
 });
 
@@ -889,43 +1008,6 @@ app.get('/api/register/cellphone', (req, res) => {
 });
 
 // 手机号登录接口
-app.get('/api/login/cellphone', (req, res) => {
-  const { phone, password } = req.query;
-  
-  if (!phone || !password) {
-    return res.status(400).json({ code: 400, message: '手机号和密码不能为空' });
-  }
-  
-  // 查询用户
-  const sql = 'SELECT * FROM users WHERE phone = ?';
-  db.get(sql, [phone], (err, user) => {
-    if (err) {
-      return res.status(500).json({ code: 500, message: '数据库查询错误' });
-    }
-    
-    if (!user) {
-      return res.status(400).json({ code: 400, message: '用户名或密码错误' });
-    }
-    
-    // 验证密码
-    const isPasswordValid = bcrypt.compareSync(password, user.password);
-    
-    if (!isPasswordValid) {
-      return res.status(400).json({ code: 400, message: '用户名或密码错误' });
-    }
-    
-    // 生成JWT令牌
-    const token = jwt.sign({ userId: user.id }, secretKey, { expiresIn: '1h' });
-    
-    res.status(200).json({ 
-      code: 200, 
-      message: '登录成功', 
-      profile: { id: user.id, nickname: user.nickname, phone: user.phone },
-      token
-    });
-  });
-});
-
 // 登录状态接口
 
 

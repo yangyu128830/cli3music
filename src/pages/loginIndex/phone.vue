@@ -69,7 +69,7 @@ export default {
     },
     handleLogin () {
       // 调用登录接口
-      api.phoneLogin(this.phone, this.password).then(res => {
+      api.phoneLoginFn(this.phone, this.password).then(res => {
         if (res && res.code === 200) {
           // 登录成功，存储token并跳转到首页
           localStorage.setItem('token', res.data.token)
