@@ -91,3 +91,4 @@ export const getPoints = api + '/user/points' // 获取积分记录
 export const getPrizes = api + '/prizes' // 获取奖品列表
 export const getUserPrizes = api + '/user/prizes' // 获取用户已获得奖品
 export const redeemPrize = api + '/prizes/redeem' // 兑换奖品
+export const getExchangeHistory = api + '/user/exchange-history' // 获取用户兑换记录
