@@ -1077,7 +1077,7 @@ app.get('/api/user/playlist', (req, res) => {
 
 // 获取用户信息
 app.get('/api/user/info', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   
   const sql = 'SELECT * FROM users WHERE id = ?';
   db.get(sql, [userId], (err, user) => {
@@ -1096,7 +1096,7 @@ app.get('/api/user/info', authenticateToken, (req, res) => {
 
 // 更新用户信息
 app.put('/api/user/info', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const { nickname, avatar, gender, birthday, signature, email, wechat } = req.body;
   
   const sql = 'UPDATE users SET nickname = ?, avatar = ?, gender = ?, birthday = ?, signature = ?, email = ?, wechat = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
@@ -1108,9 +1108,26 @@ app.put('/api/user/info', authenticateToken, (req, res) => {
   });
 });
 
+// 推荐昵称
+app.get('/api/nickname/recommend', (req, res) => {
+  const nicknames = [
+    '音乐爱好者',
+    '旋律大师',
+    '音符精灵',
+    '节奏达人',
+    '歌声悠扬',
+    '音乐朝圣者',
+    '旋律守护者',
+    '音符旅行者',
+    '节奏掌控者',
+    '歌声动人'
+  ];
+  res.status(200).json({ data: { code: 200, message: '获取成功', nicknames } });
+});
+
 // 修改密码
 app.put('/api/user/password', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const { oldPassword, newPassword } = req.body;
   
   // 验证旧密码
@@ -1199,9 +1216,19 @@ app.get('/api/user/recommend-nickname', (req, res) => {
 
 // 获取积分记录
 app.get('/api/points', authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  // 返回模拟的积分记录
-  res.status(200).json({ data: { code: 200, message: '获取成功', points: req.user.points, records: [] } });
+  const userId = req.user.userId;
+  // 查询用户的积分信息
+  const sql = 'SELECT points, level FROM users WHERE id = ?';
+  db.get(sql, [userId], (err, user) => {
+    if (err) {
+      return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
+    }
+    if (!user) {
+      return res.status(404).json({ data: { code: 404, message: '用户不存在' } });
+    }
+    // 返回积分记录（暂时模拟）
+    res.status(200).json({ data: { code: 200, message: '获取成功', points: user.points, level: user.level, records: [] } });
+  });
 });
 
 // 获取奖品列表

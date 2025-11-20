@@ -146,7 +146,7 @@ export default {
             console.log(res)
             localStorage.setItem('account', phone)
             // 存储token
-            localStorage.setItem('token', res.data.data.token)
+            localStorage.setItem('token', res.data.token)
             this.success()
           }
         })
