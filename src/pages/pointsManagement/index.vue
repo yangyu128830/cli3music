@@ -66,7 +66,7 @@ export default {
     },
     getPointsInfo () {
       api.getPoints().then(res => {
-        if (res && res.data.data.code === 200) {
+        if (res && res.data.code === 200) {
           this.totalPoints = res.data.data.points
           this.userLevel = res.data.data.level
           this.pointsRecords = res.data.data.records || []

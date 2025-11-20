@@ -22,9 +22,11 @@ module.exports = {
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 30000 // 设置代理超时时间为30秒
       }
-    }
+    },
+    timeout: 30000 // 设置服务器超时时间为30秒
   },
   pluginOptions: {
     'style-resources-loader': {

@@ -254,7 +254,7 @@ export default {
     })
   },
   /**
-   * 调用此接口 ,传入手机号码和验证码,密码,昵称, 可注册网易云音乐账号(同时可修改密码)
+   * 调用此接口 , 传入手机号码和验证码,密码,昵称, 可注册网易云音乐账号(同时可修改密码)
    * @param {*} params 参数对象
    */
   registerFn (captcha, phone, password, nickname) {
@@ -265,6 +265,26 @@ export default {
         password,
         nickname
       }
+    })
+  },
+  /**
+   * 获取我的奖品接口
+   */
+  getPrizes () {
+    return axios.get('/api/user/prizes')
+  },
+  /**
+   * 获取奖品列表接口
+   */
+  getPrizeList () {
+    return axios.get(getPrizes)
+  },
+  /**
+   * 兑换奖品接口
+   */
+  exchangePrize (prizeId) {
+    return axios.post('/api/prizes/exchange', {
+      prizeId
     })
   },
   /**
@@ -954,12 +974,6 @@ export default {
    */
   getPoints () {
     return axios.get(getPoints)
-  },
-  /**
-   * 获取奖品列表
-   */
-  getPrizes () {
-    return axios.get(getPrizes)
   },
   /**
    * 获取用户奖品
