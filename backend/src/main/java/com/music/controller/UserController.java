@@ -66,8 +66,19 @@ public class UserController {
 
     // 获取用户信息
     @GetMapping("/user/info")
-    public ResponseEntity<Map<String, Object>> getUserInfo(@RequestParam String phone) {
+    public ResponseEntity<Map<String, Object>> getUserInfo(@RequestHeader(value = "Authorization", required = false) String token) {
         Map<String, Object> response = new HashMap<>();
+        
+        if (token == null || !token.startsWith("Bearer ")) {
+            response.put("code", 401);
+            response.put("message", "未授权或授权格式错误");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        
+        // 提取token
+        String jwtToken = token.substring(7);
+        String phone = jwtUtil.getPhoneFromToken(jwtToken);
+        
         User user = userService.findByPhone(phone);
 
         if (user != null) {
@@ -95,11 +106,21 @@ public class UserController {
 
     // 修改密码
     @PostMapping("/user/change-password")
-    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody Map<String, String> passwordRequest) {
-        String phone = passwordRequest.get("phone");
+    public ResponseEntity<Map<String, Object>> changePassword(@RequestHeader(value = "Authorization", required = false) String token, @RequestBody Map<String, String> passwordRequest) {
+        Map<String, Object> response = new HashMap<>();
+        
+        if (token == null || !token.startsWith("Bearer ")) {
+            response.put("code", 401);
+            response.put("message", "未授权或授权格式错误");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        
+        // 提取token
+        String jwtToken = token.substring(7);
+        String phone = jwtUtil.getPhoneFromToken(jwtToken);
+        
         String oldPassword = passwordRequest.get("oldPassword");
         String newPassword = passwordRequest.get("newPassword");
-        Map<String, Object> response = new HashMap<>();
 
         boolean success = userService.changePassword(phone, oldPassword, newPassword);
         if (success) {
