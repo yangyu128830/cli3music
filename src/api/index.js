@@ -14,6 +14,18 @@ axios.interceptors.request.use(config => {
   return Promise.reject(error)
 })
 
+// 添加响应拦截器
+axios.interceptors.response.use(response => {
+  // 如果响应数据存在且包含data字段，返回data字段
+  if (response.data) {
+    return response.data
+  }
+  return response
+}, error => {
+  // 处理响应错误
+  return Promise.reject(error)
+})
+
 import {
   albumCollec,
   bannerSwiper,
@@ -330,20 +342,10 @@ export default {
   },
   /**
    * 调用此接口 ,传入手机号码和验证码,密码,昵称, 可注册网易云音乐账号(同时可修改密码)
-   * @param {*} captcha 验证码
-   * @param {*} phone 手机号码
-   * @param {*} password 密码
-   * @param {*} nickname 昵称
+   * @param {*} params 参数对象
    */
-  registerFn (captcha, phone, password, nickname) {
-    return axios.get(register, {
-      params: {
-        captcha,
-        phone,
-        password,
-        nickname
-      }
-    })
+  register (params) {
+    return axios.get(register, { params })
   },
   /**
    * 登陆后调用此接口 , 传入用户 id, 可以获取用户歌单
@@ -1018,9 +1020,9 @@ export default {
    * 验证密码
    * @param {*} password 密码
    */
-  checkPasswordFn (password) {
-    return axios.post(checkPassword, { password })
-  },
+  checkPassword (password) {
+ return axios.post(checkPassword, { password })
+},
   /**
    * 推荐昵称
    */
