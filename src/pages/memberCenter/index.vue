@@ -76,8 +76,8 @@ export default {
     },
     getUserInfo () {
       api.getUserInfo().then(res => {
-        if (res && res.code === 200) {
-          this.userInfo = res.user
+        if (res && res.data.code === 200) {
+          this.userInfo = res.data.user
         }
       }).catch(err => {
         console.error('获取用户信息失败:', err)

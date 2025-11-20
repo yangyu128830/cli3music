@@ -1,31 +1,4 @@
 import axios from 'axios'
-
-// 添加请求拦截器
-axios.interceptors.request.use(config => {
-  // 从localStorage获取令牌
-  const token = localStorage.getItem('token')
-  // 如果令牌存在，添加到请求头
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-}, error => {
-  // 处理请求错误
-  return Promise.reject(error)
-})
-
-// 添加响应拦截器
-axios.interceptors.response.use(response => {
-  // 如果响应数据存在且包含data字段，返回data字段
-  if (response.data) {
-    return response.data
-  }
-  return response
-}, error => {
-  // 处理响应错误
-  return Promise.reject(error)
-})
-
 import {
   albumCollec,
   bannerSwiper,
@@ -107,6 +80,25 @@ import {
   redeemPrize
 } from './config'
 axios.defaults.withCredentials = true
+// 添加请求拦截器
+axios.interceptors.request.use(config => {
+  // 在这里可以添加请求头、token等
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+}, error => {
+  return Promise.reject(error)
+})
+// 添加响应拦截器
+axios.interceptors.response.use(response => {
+  // 在这里可以对响应数据进行处理
+  return response
+}, error => {
+  // 在这里可以处理响应错误
+  return Promise.reject(error)
+})
 export default {
   /**
    * 请求发现页面首页轮播图
@@ -1021,8 +1013,8 @@ export default {
    * @param {*} password 密码
    */
   checkPassword (password) {
- return axios.post(checkPassword, { password })
-},
+    return axios.post(checkPassword, { password })
+  },
   /**
    * 推荐昵称
    */
@@ -1044,7 +1036,7 @@ export default {
   /**
    * 获取用户奖品
    */
-  getUserPrizesFn () {
+  getUserPrizes () {
     return axios.get(getUserPrizes)
   },
   /**

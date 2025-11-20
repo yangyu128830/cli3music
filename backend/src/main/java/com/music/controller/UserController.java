@@ -157,4 +157,60 @@ public class UserController {
         response.put("nicknames", nicknames);
         return ResponseEntity.ok(response);
     }
+
+    // 获取用户积分
+    @GetMapping("/user/points")
+    public ResponseEntity<Map<String, Object>> getPoints(@RequestHeader(value = "Authorization", required = false) String token) {
+        Map<String, Object> response = new HashMap<>();
+        
+        if (token == null || !token.startsWith("Bearer ")) {
+            response.put("code", 401);
+            response.put("message", "未授权或授权格式错误");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        
+        // 提取token
+        String jwtToken = token.substring(7);
+        String phone = jwtUtil.getPhoneFromToken(jwtToken);
+        
+        User user = userService.findByPhone(phone);
+        
+        if (user != null) {
+            response.put("code", 200);
+            response.put("points", user.getPoints());
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("code", 404);
+            response.put("message", "用户不存在");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    // 获取用户奖品
+    @GetMapping("/user/prizes")
+    public ResponseEntity<Map<String, Object>> getUserPrizes(@RequestHeader(value = "Authorization", required = false) String token) {
+        Map<String, Object> response = new HashMap<>();
+        
+        if (token == null || !token.startsWith("Bearer ")) {
+            response.put("code", 401);
+            response.put("message", "未授权或授权格式错误");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+        
+        // 提取token
+        String jwtToken = token.substring(7);
+        String phone = jwtUtil.getPhoneFromToken(jwtToken);
+        
+        User user = userService.findByPhone(phone);
+        
+        if (user != null) {
+            response.put("code", 200);
+            response.put("prizes", new ArrayList<>()); // 返回空数组，实际项目中应从数据库查询
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("code", 404);
+            response.put("message", "用户不存在");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
 }
