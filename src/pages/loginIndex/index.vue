@@ -25,14 +25,22 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  .phoneLogin {
+  .phoneLogin, .registerBtn {
     width: 5.3rem;
     height: 0.8rem;
     border-radius: 0.4rem;
-    background-color: #fff;
-    color: @bgcolor;
+    margin: 0.2rem;
     font-weight: 600;
     letter-spacing: 3px;
+  }
+  .phoneLogin {
+    background-color: #fff;
+    color: @bgcolor;
+  }
+  .registerBtn {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 1px solid #fff;
   }
 }
 </style>

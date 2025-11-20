@@ -125,15 +125,15 @@ export default {
     },
     getUserInfo () {
       api.getUserInfo().then(res => {
-        if (res.code === 200) {
-          this.userInfo = res.user
+        if (res.data.code === 200) {
+          this.userInfo = res.data.user
         }
       })
     },
     recommendNickname () {
       api.recommendNickname().then(res => {
-        if (res.code === 200) {
-          this.nicknameRecommendations = res.nicknames
+        if (res.data.code === 200) {
+          this.nicknameRecommendations = res.data.nicknames
         }
       })
     },
@@ -143,11 +143,11 @@ export default {
     },
     saveProfile () {
       api.updateUserInfo(this.userInfo).then(res => {
-        if (res.code === 200) {
+        if (res.data.code === 200) {
           this.$toast.success('保存成功')
           this.$router.go(-1)
         } else {
-          this.$toast.fail(res.message)
+          this.$toast.fail(res.data.message)
         }
       })
     }

@@ -3,6 +3,29 @@ import App from './App'
 import router from './router'
 import store from './store'
 import axios from 'axios'
+
+// 配置axios默认baseURL
+axios.defaults.baseURL = 'http://localhost:3000'
+
+// 请求拦截器
+axios.interceptors.request.use(config => {
+  // 从localStorage获取token
+  const token = localStorage.getItem('token')
+  // 如果token存在，添加到请求头
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+}, error => {
+  return Promise.reject(error)
+})
+
+// 响应拦截器
+axios.interceptors.response.use(response => {
+  return response
+}, error => {
+  return Promise.reject(error)
+})
 import fastclick from 'fastclick'
 import VueLazyload from 'vue-lazyload'
 import topTip from '@/components/top-tip'

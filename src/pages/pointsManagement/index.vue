@@ -66,9 +66,10 @@ export default {
     },
     getPointsInfo () {
       api.getPoints().then(res => {
-        if (res && res.data.code === 200) {
-          this.totalPoints = res.data.points
-          this.pointsRecords = res.data.records || []
+        if (res && res.data.data.code === 200) {
+          this.totalPoints = res.data.data.points
+          this.userLevel = res.data.data.level
+          this.pointsRecords = res.data.data.records || []
         }
       }).catch(err => {
         console.error('获取积分信息失败:', err)
