@@ -160,6 +160,81 @@ const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 // 全局变量，用于存储验证码
 const captchaStore = new Map();
 
+// 验证码生成和发送接口
+app.get('/api/captcha/sent', (req, res) => {
+  const { phone } = req.query;
+  if (!phone) {
+    return res.status(400).json({ code: 400, message: '手机号不能为空' });
+  }
+  // 生成随机验证码
+  const captcha = Math.floor(100000 + Math.random() * 900000).toString();
+  // 存储验证码，有效期5分钟
+  captchaStore.set(phone, { captcha, expireTime: Date.now() + 5 * 60 * 1000 });
+  // 这里应该调用短信服务发送验证码，目前模拟发送
+  console.log(`发送验证码 ${captcha} 到手机 ${phone}`);
+  res.status(200).json({ code: 200, message: '验证码发送成功' });
+});
+
+// 验证码校验接口
+app.get('/api/captcha/verify', (req, res) => {
+  const { phone, captcha } = req.query;
+  if (!phone || !captcha) {
+    return res.status(400).json({ code: 400, message: '手机号和验证码不能为空' });
+  }
+  const captchaInfo = captchaStore.get(phone);
+  if (!captchaInfo) {
+    return res.status(400).json({ code: 400, message: '验证码不存在或已过期' });
+  }
+  if (captchaInfo.expireTime < Date.now()) {
+    captchaStore.delete(phone);
+    return res.status(400).json({ code: 400, message: '验证码已过期' });
+  }
+  if (captchaInfo.captcha !== captcha) {
+    return res.status(400).json({ code: 400, message: '验证码错误' });
+  }
+  captchaStore.delete(phone);
+  res.status(200).json({ code: 200, message: '验证码校验成功' });
+});
+
+// 注册接口
+app.post('/api/register/cellphone', (req, res) => {
+  const { phone, password, captcha, nickname } = req.body;
+  if (!phone || !password || !captcha || !nickname) {
+    return res.status(400).json({ code: 400, message: '参数不能为空' });
+  }
+  // 首先验证验证码
+  const captchaInfo = captchaStore.get(phone);
+  if (!captchaInfo || captchaInfo.expireTime < Date.now() || captchaInfo.captcha !== captcha) {
+    return res.status(400).json({ code: 400, message: '验证码错误或已过期' });
+  }
+  // 检查手机号是否已注册
+  const checkSql = 'SELECT * FROM users WHERE phone = ?';
+  db.get(checkSql, [phone], (err, user) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '服务器错误' });
+    }
+    if (user) {
+      return res.status(400).json({ code: 400, message: '手机号已注册' });
+    }
+    // 加密密码
+    bcrypt.hash(password, 10, (err, hashedPassword) => {
+      if (err) {
+        return res.status(500).json({ code: 500, message: '服务器错误' });
+      }
+      // 插入用户数据
+      const insertSql = 'INSERT INTO users (phone, password, nickname) VALUES (?, ?, ?)';
+      db.run(insertSql, [phone, hashedPassword, nickname], (err) => {
+        if (err) {
+          return res.status(500).json({ code: 500, message: '服务器错误' });
+        }
+        // 注册成功后删除验证码
+        captchaStore.delete(phone);
+        res.status(200).json({ code: 200, message: '注册成功' });
+      });
+    });
+  });
+});
+
 // 验证JWT令牌的中间件
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
@@ -852,10 +927,7 @@ app.get('/api/login/cellphone', (req, res) => {
 });
 
 // 登录状态接口
-app.get('/api/login/status', (req, res) => {
-  // 模拟登录状态
-  res.status(200).json({ code: 200, message: '获取成功', data: { account: { id: 123456 }, profile: { nickname: '模拟用户' } } });
-});
+
 
 // 用户详情接口
 app.get('/api/user/detail', (req, res) => {
@@ -1090,7 +1162,7 @@ app.get('/api/user/info', authenticateToken, (req, res) => {
     
     // 移除敏感信息
     delete user.password;
-    res.status(200).json({ data: { code: 200, message: '获取成功', user } });
+    res.status(200).json({ code: 200, message: '获取成功', user });
   });
 });
 
@@ -1215,7 +1287,7 @@ app.get('/api/user/recommend-nickname', (req, res) => {
 });
 
 // 获取积分记录
-app.get('/api/points', authenticateToken, (req, res) => {
+app.get('/api/user/points', authenticateToken, (req, res) => {
   const userId = req.user.userId;
   // 查询用户的积分信息
   const sql = 'SELECT points, level FROM users WHERE id = ?';
@@ -1244,7 +1316,7 @@ app.get('/api/prizes', authenticateToken, (req, res) => {
 
 // 获取用户已获得奖品
 app.get('/api/user/prizes', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const sql = `
     SELECT p.*, up.obtained_at FROM user_prizes up
     JOIN prizes p ON up.prize_id = p.id
@@ -1261,7 +1333,7 @@ app.get('/api/user/prizes', authenticateToken, (req, res) => {
 
 // 获取用户兑换记录
 app.get('/api/user/exchange-history', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const sql = `
     SELECT p.name AS prize_name, up.obtained_at AS exchange_time, '已发放' AS status
     FROM user_prizes up
@@ -1279,7 +1351,7 @@ app.get('/api/user/exchange-history', authenticateToken, (req, res) => {
 
 // 兑换奖品
 app.post('/api/prizes/redeem', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const { prizeId } = req.body;
   
   // 检查奖品是否存在
@@ -1293,29 +1365,29 @@ app.post('/api/prizes/redeem', authenticateToken, (req, res) => {
     }
     
     // 检查用户等级是否满足
-  const checkUserSql = 'SELECT level FROM users WHERE id = ?';
-  db.get(checkUserSql, [userId], (err, user) => {
-    if (err) {
-      return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
-    }
-    if (user.level < prize.required_level) {
-      return res.status(400).json({ data: { code: 400, message: '等级不足，无法兑换' } });
-    }
-      
+    const checkUserSql = 'SELECT level FROM users WHERE id = ?';
+    db.get(checkUserSql, [userId], (err, user) => {
+      if (err) {
+        return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
+      }
+      if (user.level < prize.required_level) {
+        return res.status(400).json({ data: { code: 400, message: '等级不足，无法兑换' } });
+      }
+        
       // 扣减库存
-  const updateStockSql = 'UPDATE prizes SET stock = stock - 1 WHERE id = ?';
-  db.run(updateStockSql, [prizeId], (err) => {
-    if (err) {
-      return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
-    }
+      const updateStockSql = 'UPDATE prizes SET stock = stock - 1 WHERE id = ?';
+      db.run(updateStockSql, [prizeId], (err) => {
+        if (err) {
+          return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
+        }
         
         // 记录用户奖品
-  const insertPrizeSql = 'INSERT INTO user_prizes (user_id, prize_id) VALUES (?, ?)';
-  db.run(insertPrizeSql, [userId, prizeId], (err) => {
-    if (err) {
-      return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
-    }
-    res.status(200).json({ data: { code: 200, message: '兑换成功' } });
+        const insertPrizeSql = 'INSERT INTO user_prizes (user_id, prize_id) VALUES (?, ?)';
+        db.run(insertPrizeSql, [userId, prizeId], (err) => {
+          if (err) {
+            return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
+          }
+          res.status(200).json({ data: { code: 200, message: '兑换成功' } });
         });
       });
     });

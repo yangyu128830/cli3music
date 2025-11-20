@@ -30,7 +30,7 @@ import VueAwesomeSwiper from 'vue-awesome-swiper'
 import 'swiper/dist/css/swiper.css'
 
 // 配置axios默认baseURL
-axios.defaults.baseURL = 'http://localhost:3000'
+axios.defaults.baseURL = '/api'
 
 // 请求拦截器
 axios.interceptors.request.use(config => {
@@ -49,6 +49,13 @@ axios.interceptors.request.use(config => {
 axios.interceptors.response.use(response => {
   return response
 }, error => {
+  // 处理401错误
+  if (error.response && error.response.status === 401) {
+    // 清除本地存储的token
+    localStorage.removeItem('token')
+    // 跳转到登录页
+    router.push('/login')
+  }
   return Promise.reject(error)
 })
 
