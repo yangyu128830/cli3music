@@ -32,10 +32,6 @@ let homeIcons = [{
   text: '驾驶模式',
   icon: 'home iconqiche'
 }, {
-  text: '会员中心',
-  icon: 'home icongerenzhongxin',
-  linkTo: 'member-center'
-}, {
   text: '编辑',
   icon: 'home icontoggle'
 }]

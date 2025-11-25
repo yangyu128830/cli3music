@@ -6,6 +6,7 @@ import {
   TO_SUN,
   TO_YUE,
   LOGIN_STATE,
+  SET_LEVEL,
   ACCOUNT_UID,
   SET_LOAD,
   RETURN_LOAD,
@@ -17,8 +18,8 @@ import {
   SET_PLAY_LIST,
   SET_AUDIO_MODE,
   SET_PLAYING_SHOW,
-  SET_LEVEL,
-  SET_USING_ALBUM_ID
+  SET_USING_ALBUM_ID,
+  SET_USER_INFO
 } from './mutation-types'
 
 // 实现侧边栏显示时底部不跟随滚动
@@ -138,5 +139,9 @@ export default {
   },
   [SET_USING_ALBUM_ID] (state, albumID) {
     state.albumId = albumID
+  },
+  // 设置用户信息
+  [SET_USER_INFO] (state, userInfo) {
+    state.userInfo = userInfo
   }
 }

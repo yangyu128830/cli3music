@@ -84,7 +84,7 @@ export const albumCollec = api + '/album/sublist'
 // =================会员中心相关
 export const getUserInfo = api + '/user/info' // 获取用户信息
 export const updateUserInfo = api + '/user/info' // 更新用户信息
-export const changePassword = api + '/user/change-password' // 修改密码
+export const changePassword = api + '/user/password' // 修改密码
 export const checkPassword = api + '/user/check-password' // 检测密码安全性
 export const recommendNickname = api + '/user/recommend-nickname' // AI智能推荐昵称
 export const getPoints = api + '/points' // 获取积分记录
