@@ -53,7 +53,7 @@ export default {
     _sendVerify () {
       let phone = this.$route.query.phone
       this.showPhone(phone)
-      api.sendVerifyFn(phone)
+      api.sendVerify(phone)
         .then(res => {
           this.isSend = true
           console.log(res)
@@ -75,7 +75,7 @@ export default {
       }
       else {
         const phone = this.$route.query.phone
-        api.sendVerifyFn(phone)
+        api.sendVerify(phone)
           .then(res => {
             this.isSend = true
             console.log(res)

@@ -1,31 +1,5 @@
 import axios from 'axios'
 
-// 添加请求拦截器
-axios.interceptors.request.use(config => {
-  // 从localStorage获取令牌
-  const token = localStorage.getItem('token')
-  // 如果令牌存在，添加到请求头
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-}, error => {
-  // 处理请求错误
-  return Promise.reject(error)
-})
-
-// 添加响应拦截器
-axios.interceptors.response.use(response => {
-  // 如果响应数据存在且包含data字段，返回data字段
-  if (response.data) {
-    return response.data
-  }
-  return response
-}, error => {
-  // 处理响应错误
-  return Promise.reject(error)
-})
-
 import {
   albumCollec,
   bannerSwiper,
@@ -216,7 +190,7 @@ export default {
    * 检测手机号码是否已注册
    * @param {*} phone 手机号
    */
-  phoneRegisteredFn (phone) {
+  phoneRegistered (phone) {
     return axios.get(phoneRegistered, {
       params: {
         phone
@@ -227,7 +201,7 @@ export default {
    * 调用此接口 ,传入手机号码, 可发送验证码
    * @param {number} phone 手机号
    */
-  sendVerifyFn (phone) {
+  sendVerify (phone) {
     return axios.get(sendVerify, {
       params: {
         phone
@@ -253,7 +227,7 @@ export default {
    * @param {number} phone 手机号
    * @param {String} password 密码
    */
-  phoneLoginFn (phone, password) {
+  phoneLogin (phone, password) {
     return axios.get(phoneLogin, {
       params: {
         phone: phone || '',
@@ -264,7 +238,7 @@ export default {
   /**
    * 获取当前登录状态
    */
-  loginStatusFn () {
+  loginStatus () {
     return axios.get(loginStatus)
   },
   /**
@@ -306,7 +280,7 @@ export default {
    * 登陆后调用此接口 , 传入用户 id, 可以获取用户详情
    * @param {*} uid 用户id
    */
-  userDetailFn (uid) {
+  userDetail (uid) {
     return axios.get(userDetail, {
       params: {
         uid
@@ -1021,8 +995,8 @@ export default {
    * @param {*} password 密码
    */
   checkPassword (password) {
- return axios.post(checkPassword, { password })
-},
+    return axios.post(checkPassword, { password })
+  },
   /**
    * 推荐昵称
    */
@@ -1038,20 +1012,20 @@ export default {
   /**
    * 获取奖品列表
    */
-  getPrizesFn () {
+  getPrizes () {
     return axios.get(getPrizes)
   },
   /**
    * 获取用户奖品
    */
-  getUserPrizesFn () {
+  getUserPrizes () {
     return axios.get(getUserPrizes)
   },
   /**
    * 兑换奖品
    * @param {*} prizeId 奖品id
    */
-  redeemPrizeFn (prizeId) {
+  redeemPrize (prizeId) {
     return axios.post(redeemPrize, { prizeId })
   }
 }

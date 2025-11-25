@@ -68,7 +68,7 @@ export default {
      * 登陆成功后存取登录状态及信息
      */
     _getLoginState () {
-      api.loginStatusFn()
+      api.loginStatus()
         .then(res => {
           // 存取用户 id
           console.log(res)
@@ -109,7 +109,7 @@ export default {
      */
     _getUserDetail (uid) {
       console.log('1111')
-      api.userDetailFn(uid)
+      api.userDetail(uid)
         .then(res => {
           const { data } = res
           if (data.code === 200) {
@@ -138,7 +138,7 @@ export default {
      * 判断密码是否正确
      */
     _isSure (phone, pwd) {
-      api.phoneLoginFn(phone, pwd)
+      api.phoneLogin(phone, pwd)
         .then(res => {
           if (res.data.code === 502) {
             this.error()

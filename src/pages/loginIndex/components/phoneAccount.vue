@@ -131,7 +131,7 @@ export default {
      */
     _determineRegistered (phone) {
       let self = this
-      api.phoneRegisteredFn(phone)
+      api.phoneRegistered(phone)
         .then(res => {
           if (res.data.exist !== -1) {
             // 已经注册 跳转到输入密码页面
