@@ -23,25 +23,25 @@
       </div>
 
       <div class="member-menu">
-        <div class="menu-item" @click="goToPoints">
-          <i class="iconfont icon-jifen"></i>
+        <div class="menu-item ripple" @click="goToPoints">
+          <i class="home icon-jifen"></i>
           <span>积分管理</span>
-          <i class="iconfont icon-jiantou"></i>
+          <i class="home icon-jiantou"></i>
         </div>
-        <div class="menu-item" @click="goToPrizes">
-          <i class="iconfont icon-jiangpin"></i>
+        <div class="menu-item ripple" @click="goToPrizes">
+          <i class="home icon-jiangpin"></i>
           <span>奖品管理</span>
-          <i class="iconfont icon-jiantou"></i>
+          <i class="home icon-jiantou"></i>
         </div>
-        <div class="menu-item" @click="goToEditProfile">
-          <i class="iconfont icon-gerenxinxi"></i>
+        <div class="menu-item ripple" @click="goToEditProfile">
+          <i class="home icon-gerenxinxi"></i>
           <span>个人资料</span>
-          <i class="iconfont icon-jiantou"></i>
+          <i class="home icon-jiantou"></i>
         </div>
-        <div class="menu-item" @click="goToChangePassword">
-          <i class="iconfont icon-mima"></i>
+        <div class="menu-item ripple" @click="goToChangePassword">
+          <i class="home icon-mima"></i>
           <span>修改密码</span>
-          <i class="iconfont icon-jiantou"></i>
+          <i class="home icon-jiantou"></i>
         </div>
       </div>
     </div>
@@ -76,8 +76,12 @@ export default {
     },
     getUserInfo () {
       api.getUserInfo().then(res => {
-        if (res && res.data.data.code === 200) {
+        if (res.data && res.data.code === 200) {
           this.userInfo = res.data.data.user
+          this.userLevel = this.userInfo.level
+          this.userPoints = this.userInfo.points
+        } else {
+          console.error('获取用户信息失败:', res.data.message)
         }
       }).catch(err => {
         console.error('获取用户信息失败:', err)
@@ -111,9 +115,12 @@ export default {
 </script>
 
 <style lang="less">
+@import url("~styles/global.less");
+@import url("//at.alicdn.com/t/font_1322300_t3s39ptd6ao.css");
+
 .member-center-wrapper {
   padding-top: 1rem;
-  background-color: #f5f5f5;
+  background-color: @bgcolor;
   min-height: 100vh;
 }
 
@@ -161,7 +168,7 @@ export default {
 
       .level-name {
         font-size: 0.24rem;
-        color: #ff6600;
+        color: @bgcolor;
       }
     }
   }
@@ -178,19 +185,26 @@ export default {
     justify-content: space-between;
     padding: 0.3rem;
     border-bottom: 1px solid #f5f5f5;
+    position: relative;
+    overflow: hidden;
 
     &:last-child {
       border-bottom: none;
     }
 
-    .iconfont {
+    .home {
       font-size: 0.36rem;
       margin-right: 0.2rem;
+      color: @bgcolor;
     }
 
     span {
       flex: 1;
       font-size: 0.32rem;
+    }
+
+    &:active {
+      background-color: #f5f5f5;
     }
   }
 }

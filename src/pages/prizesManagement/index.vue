@@ -54,7 +54,7 @@ export default {
       // 调用API获取我的奖品
       api.getUserPrizes().then(res => {
         if (res.data && res.data.code === 200) {
-          this.myPrizes = res.data.prizes.map(prize => ({
+          this.myPrizes = res.data.data.prizes.map(prize => ({
             name: prize.name,
             obtainedTime: new Date(prize.obtained_at).toLocaleDateString()
           }))
@@ -77,9 +77,11 @@ export default {
 </script>
 
 <style lang="less">
+@import url("~styles/global.less");
+
 .prizes-management-wrapper {
   padding-top: 1rem;
-  background-color: #f5f5f5;
+  background-color: @bgcolor;
   min-height: 100vh;
 }
 
@@ -88,6 +90,7 @@ export default {
     font-size: 0.36rem;
     font-weight: bold;
     margin-bottom: 0.3rem;
+    color: @bgcolor;
   }
 
   .prizes-grid {
@@ -100,11 +103,13 @@ export default {
       border: 1px solid #eee;
       border-radius: 0.05rem;
       box-shadow: 0 0 0.1rem rgba(0, 0, 0, 0.1);
+      background-color: #fff;
 
       .prize-name {
         font-size: 0.32rem;
         font-weight: bold;
         margin-bottom: 0.1rem;
+        color: @bgcolor;
       }
 
       .obtained-time {
@@ -121,6 +126,10 @@ export default {
       align-items: center;
       padding: 0.2rem 0;
       border-bottom: 1px solid #eee;
+      background-color: #fff;
+      padding: 0.3rem;
+      margin-bottom: 0.1rem;
+      border-radius: 0.05rem;
 
       .record-info {
         .record-name {

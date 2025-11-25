@@ -67,35 +67,22 @@ export default {
     /**
      * 登陆成功后存取登录状态及信息
      */
-    _getLoginState () {
-      api.loginStatusFn()
-        .then(res => {
-          // 存取用户 id
-          console.log(res)
-          let userId = res.data.profile.userId
-          if (res.data.code === 200) {
-            // 存取用户信息
-            let accountInfo = res.data.profile
-            // 成功登陆
-            // 修改状态为 1
-            this.$store.commit('LOGIN_STATE', 1)
-            // Vuex在用户刷新的时候loginState会回到默认值false
-            // 所以我们需要用到HTML5储存
-            // 我们设置一个名为loginState
-            localStorage.setItem('loginState', 1)
-            // 存入用户头像 昵称
-            localStorage.setItem('avatarUrl', accountInfo.avatarUrl)
-            localStorage.setItem('nickname', accountInfo.nickname)
-            // 存取用户 uid信息
-            this.$store.commit('ACCOUNT_UID', userId)
-            localStorage.setItem('accountUid', userId)
-            this._getUserDetail(userId)
-          }
-        })
-        .catch(err => {
-          this.flag = true
-          console.log(err)
-        })
+    _getLoginState (userData) {
+      // 成功登陆
+      // 修改状态为 1
+      this.$store.commit('LOGIN_STATE', 1)
+      // Vuex在用户刷新的时候loginState会回到默认值false
+      // 所以我们需要用到HTML5储存
+      // 我们设置一个名为loginState
+      localStorage.setItem('loginState', 1)
+      // 存入用户头像 昵称
+      localStorage.setItem('avatarUrl', userData.avatar)
+      localStorage.setItem('nickname', userData.nickname)
+      // 存取用户 uid信息
+      this.$store.commit('ACCOUNT_UID', userData.id)
+      localStorage.setItem('accountUid', userData.id)
+      // 跳转到发现页面
+      this.$router.push({ path: '/find' })
     },
     goForget () {
       const phone = this.$route.query.phone
@@ -146,7 +133,9 @@ export default {
             console.log(res)
             localStorage.setItem('account', phone)
             // 存储token
-            localStorage.setItem('token', res.data.token)
+            localStorage.setItem('token', res.data.data.token)
+            // 登录成功后直接使用返回的用户信息
+            this._getLoginState(res.data.data.user)
             this.success()
           }
         })

@@ -66,9 +66,8 @@ export default {
     },
     getPointsInfo () {
       api.getPoints().then(res => {
-        if (res && res.data.data.code === 200) {
+        if (res.data && res.data.code === 200) {
           this.totalPoints = res.data.data.points
-          this.userLevel = res.data.data.level
           this.pointsRecords = res.data.data.records || []
         }
       }).catch(err => {
@@ -91,9 +90,11 @@ export default {
 </script>
 
 <style lang="less">
+@import url("~styles/global.less");
+
 .points-management-wrapper {
   padding-top: 1rem;
-  background-color: #f5f5f5;
+  background-color: @bgcolor;
   min-height: 100vh;
 }
 
@@ -111,7 +112,7 @@ export default {
     .points-number {
       font-size: 0.6rem;
       font-weight: bold;
-      color: #ff6600;
+      color: @bgcolor;
     }
 
     .points-text {
@@ -125,7 +126,7 @@ export default {
     font-size: 0.32rem;
 
     .level-name {
-      color: #ff6600;
+      color: @bgcolor;
     }
   }
 }
@@ -141,6 +142,7 @@ export default {
     font-size: 0.36rem;
     font-weight: bold;
     margin-bottom: 0.2rem;
+    color: @bgcolor;
   }
 
   .rule-content {
@@ -163,6 +165,7 @@ export default {
     font-size: 0.36rem;
     font-weight: bold;
     margin-bottom: 0.2rem;
+    color: @bgcolor;
   }
 
   .record-list {

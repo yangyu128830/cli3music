@@ -112,8 +112,8 @@ export default {
       this.captchaText = `${this.captchaCountdown}s后重新发送`
       
       // 调用发送验证码接口
-      api.sendVerify(this.phone).then(res => {
-        if (res && res.code === 200) {
+      api.sendVerifyFn(this.phone).then(res => {
+        if (res.data && res.data.code === 200) {
           // 验证码发送成功
         } else {
           this.errorMsg = '验证码发送失败'
@@ -149,13 +149,13 @@ export default {
       }
       
       // 调用注册接口
-      api.register(this.phone, this.password, this.nickname, this.captcha).then(res => {
-        if (res && res.code === 200) {
+      api.register({ phone: this.phone, password: this.password, nickname: this.nickname, captcha: this.captcha }).then(res => {
+        if (res.data && res.data.data && res.data.data.code === 200) {
           // 注册成功，跳转到登录页面
           this.$router.push('/login')
           this.$toast('注册成功')
         } else {
-          this.errorMsg = res.message || '注册失败'
+          this.errorMsg = res.data.data.message || '注册失败'
         }
       }).catch(err => {
         console.error('注册失败:', err)
