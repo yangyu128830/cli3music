@@ -1,4 +1,5 @@
 import axios from 'axios'
+
 import {
   albumCollec,
   bannerSwiper,
@@ -80,25 +81,6 @@ import {
   redeemPrize
 } from './config'
 axios.defaults.withCredentials = true
-// 添加请求拦截器
-axios.interceptors.request.use(config => {
-  // 在这里可以添加请求头、token等
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-}, error => {
-  return Promise.reject(error)
-})
-// 添加响应拦截器
-axios.interceptors.response.use(response => {
-  // 在这里可以对响应数据进行处理
-  return response
-}, error => {
-  // 在这里可以处理响应错误
-  return Promise.reject(error)
-})
 export default {
   /**
    * 请求发现页面首页轮播图
@@ -208,7 +190,7 @@ export default {
    * 检测手机号码是否已注册
    * @param {*} phone 手机号
    */
-  phoneRegisteredFn (phone) {
+  phoneRegistered (phone) {
     return axios.get(phoneRegistered, {
       params: {
         phone
@@ -219,7 +201,7 @@ export default {
    * 调用此接口 ,传入手机号码, 可发送验证码
    * @param {number} phone 手机号
    */
-  sendVerifyFn (phone) {
+  sendVerify (phone) {
     return axios.get(sendVerify, {
       params: {
         phone
@@ -245,7 +227,7 @@ export default {
    * @param {number} phone 手机号
    * @param {String} password 密码
    */
-  phoneLoginFn (phone, password) {
+  phoneLogin (phone, password) {
     return axios.get(phoneLogin, {
       params: {
         phone: phone || '',
@@ -256,7 +238,7 @@ export default {
   /**
    * 获取当前登录状态
    */
-  loginStatusFn () {
+  loginStatus () {
     return axios.get(loginStatus)
   },
   /**
@@ -298,7 +280,7 @@ export default {
    * 登陆后调用此接口 , 传入用户 id, 可以获取用户详情
    * @param {*} uid 用户id
    */
-  userDetailFn (uid) {
+  userDetail (uid) {
     return axios.get(userDetail, {
       params: {
         uid
@@ -1030,7 +1012,7 @@ export default {
   /**
    * 获取奖品列表
    */
-  getPrizesFn () {
+  getPrizes () {
     return axios.get(getPrizes)
   },
   /**
@@ -1043,7 +1025,7 @@ export default {
    * 兑换奖品
    * @param {*} prizeId 奖品id
    */
-  redeemPrizeFn (prizeId) {
+  redeemPrize (prizeId) {
     return axios.post(redeemPrize, { prizeId })
   }
 }

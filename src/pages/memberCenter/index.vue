@@ -7,10 +7,10 @@
       <div class="member-card">
         <div class="member-info">
           <div class="avatar">
-            <img :src="userInfo.avatar" alt="用户头像">
+            <img :src="userInfo.avatar || require('@/assets/logo.png')" alt="用户头像">
           </div>
           <div class="info">
-            <div class="nickname">{{ userInfo.nickname }}</div>
+            <div class="nickname">{{ userInfo.nickname || '未设置昵称' }}</div>
             <div class="level">
               <span class="level-text">等级：Lv.{{ userInfo.level }}</span>
               <span class="points">积分：{{ userInfo.points }}</span>
@@ -51,6 +51,7 @@
 <script>
 import generalNav from 'base/generalNav'
 import api from 'api'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'member-center',
@@ -67,8 +68,13 @@ export default {
       }
     }
   },
+  computed: {
+    ...mapGetters({ isLogin: 'LOGIN_STATE' })
+  },
   mounted () {
-    this.getUserInfo()
+    if (this.isLogin) {
+      this.getUserInfo()
+    }
   },
   methods: {
     returnPage () {
@@ -76,8 +82,8 @@ export default {
     },
     getUserInfo () {
       api.getUserInfo().then(res => {
-        if (res && res.data.code === 200) {
-          this.userInfo = res.data.user
+        if (res && res.code === 200) {
+          this.userInfo = res.user
         }
       }).catch(err => {
         console.error('获取用户信息失败:', err)
@@ -111,6 +117,8 @@ export default {
 </script>
 
 <style lang="less">
+@import url("~styles/global.less");
+
 .member-center-wrapper {
   padding-top: 1rem;
   background-color: #f5f5f5;
@@ -118,11 +126,12 @@ export default {
 }
 
 .member-card {
-  background-color: #fff;
+  background: linear-gradient(135deg, @bgcolor 0%, #ff9a6a 100%);
   border-radius: 0.2rem;
-  padding: 0.3rem;
+  padding: 0.4rem;
   margin-bottom: 0.3rem;
-  box-shadow: 0 0 0.1rem rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.1);
+  color: #fff;
 
   .member-info {
     display: flex;
@@ -134,6 +143,7 @@ export default {
       border-radius: 50%;
       overflow: hidden;
       margin-right: 0.3rem;
+      border: 3px solid rgba(255, 255, 255, 0.3);
 
       img {
         width: 100%;
@@ -147,12 +157,13 @@ export default {
         font-size: 0.36rem;
         font-weight: bold;
         margin-bottom: 0.1rem;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
       }
 
       .level {
         font-size: 0.28rem;
-        color: #666;
         margin-bottom: 0.1rem;
+        opacity: 0.9;
 
         .level-text {
           margin-right: 0.3rem;
@@ -161,7 +172,10 @@ export default {
 
       .level-name {
         font-size: 0.24rem;
-        color: #ff6600;
+        background: rgba(255, 255, 255, 0.3);
+        padding: 0.05rem 0.15rem;
+        border-radius: 0.1rem;
+        display: inline-block;
       }
     }
   }
@@ -170,7 +184,7 @@ export default {
 .member-menu {
   background-color: #fff;
   border-radius: 0.2rem;
-  box-shadow: 0 0 0.1rem rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.1);
 
   .menu-item {
     display: flex;
@@ -178,19 +192,31 @@ export default {
     justify-content: space-between;
     padding: 0.3rem;
     border-bottom: 1px solid #f5f5f5;
+    transition: all 0.3s ease;
 
     &:last-child {
       border-bottom: none;
     }
 
+    &:active {
+      background-color: #f5f5f5;
+    }
+
     .iconfont {
       font-size: 0.36rem;
       margin-right: 0.2rem;
+      color: @bgcolor;
     }
 
     span {
       flex: 1;
       font-size: 0.32rem;
+      color: #333;
+    }
+
+    .icon-jiantou {
+      color: #ccc;
+      font-size: 0.28rem;
     }
   }
 }

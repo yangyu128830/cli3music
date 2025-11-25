@@ -133,7 +133,7 @@ export default {
         // 用户未登录
         return
       }
-      api.userDetailFn(id)
+      api.userDetail(id)
         .then(res => {
           const { data } = res
           if (data.code === 200) {
