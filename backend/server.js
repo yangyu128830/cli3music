@@ -142,7 +142,6 @@ db.exec(createTables, (err) => {
 // 配置跨域
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Credentials', 'true');
   res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') {
@@ -177,6 +176,18 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// 刷新token接口
+app.get('/api/refresh-token', authenticateToken, (req, res) => {
+  // 生成新的token
+  const token = jwt.sign({ userId: req.user.userId }, secretKey, { expiresIn: '1h' });
+  
+  res.status(200).json({ 
+    code: 200, 
+    message: 'token刷新成功', 
+    data: { token } 
+  });
+});
 
 // 注册接口（已移至下方完整实现）
 
@@ -236,13 +247,13 @@ app.get('/api/recommend/songList', (req, res) => {
 app.get('/api/banner', (req, res) => {
   // 模拟轮播图数据
   const banners = [
-    { id: 1, pic: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', typeTitle: '热门推荐', titleColor: '#FF5722' },
-    { id: 2, pic: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', typeTitle: '新歌速递', titleColor: '#4CAF50' },
-    { id: 3, pic: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', typeTitle: '排行榜', titleColor: '#2196F3' }
+    { id: 1, imageUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', targetId: 1, targetType: 1000 },
+    { id: 2, imageUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', targetId: 2, targetType: 1000 },
+    { id: 3, imageUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', targetId: 3, targetType: 1000 }
   ];
   
   res.status(200).json({ code: 200, message: '获取成功', banners });
-})
+});
 
 // 获取推荐歌单接口
 app.get('/api/top/playlist', (req, res) => {
@@ -380,12 +391,12 @@ app.get('/api/playlist/detail', (req, res) => {
 // 获取每日推荐歌单接口
 app.get('/api/recommend/resource', (req, res) => {
   // 模拟每日推荐歌单数据
-  const recommend = [
+  const recommends = [
     { id: 1, name: '每日推荐', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', playCount: 123456 },
     { id: 2, name: '个性化推荐', coverImgUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg', playCount: 789012 }
   ];
   
-  res.status(200).json({ code: 200, message: '获取成功', recommend });
+  res.status(200).json({ code: 200, message: '获取成功', recommends });
 });
 
 // 获取新碟接口
@@ -644,8 +655,8 @@ app.get('/api/top/song', (req, res) => {
   
   // 模拟新歌数据
   const data = [
-    { id: 1, name: '新歌1', ar: [{ name: '歌手1' }], album: { name: '专辑1', blurPicUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } },
-    { id: 2, name: '新歌2', ar: [{ name: '歌手2' }], album: { name: '专辑2', blurPicUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } }
+    { id: 1, name: '新歌1', ar: [{ name: '歌手1' }], al: { name: '专辑1', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } },
+    { id: 2, name: '新歌2', ar: [{ name: '歌手2' }], al: { name: '专辑2', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } }
   ];
   
   res.status(200).json({ code: 200, message: '获取成功', data });
@@ -1079,7 +1090,7 @@ app.get('/api/user/playlist', (req, res) => {
 
 // 获取用户信息
 app.get('/api/user/info', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   
   const sql = 'SELECT * FROM users WHERE id = ?';
   db.get(sql, [userId], (err, user) => {
@@ -1098,7 +1109,7 @@ app.get('/api/user/info', authenticateToken, (req, res) => {
 
 // 更新用户信息
 app.put('/api/user/info', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const { nickname, avatar, gender, birthday, signature, email, wechat } = req.body;
   
   const sql = 'UPDATE users SET nickname = ?, avatar = ?, gender = ?, birthday = ?, signature = ?, email = ?, wechat = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?';
@@ -1112,7 +1123,7 @@ app.put('/api/user/info', authenticateToken, (req, res) => {
 
 // 修改密码
 app.put('/api/user/password', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const { oldPassword, newPassword } = req.body;
   
   // 验证旧密码
@@ -1201,7 +1212,7 @@ app.get('/api/user/recommend-nickname', (req, res) => {
 
 // 获取积分记录
 app.get('/api/points', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   // 返回模拟的积分记录
   res.status(200).json({ code: 200, message: '获取成功', points: req.user.points, records: [] });
 });
@@ -1219,7 +1230,7 @@ app.get('/api/prizes', authenticateToken, (req, res) => {
 
 // 获取用户已获得奖品
 app.get('/api/user/prizes', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const sql = `
     SELECT p.*, up.obtained_at FROM user_prizes up
     JOIN prizes p ON up.prize_id = p.id
@@ -1235,7 +1246,7 @@ app.get('/api/user/prizes', authenticateToken, (req, res) => {
 
 // 兑换奖品
 app.post('/api/prizes/redeem', authenticateToken, (req, res) => {
-  const userId = req.user.id;
+  const userId = req.user.userId;
   const { prizeId } = req.body;
   
   // 检查奖品是否存在

@@ -145,7 +145,6 @@ export default {
           } else if (res.data.code === 200) {
             console.log(res)
             localStorage.setItem('account', phone)
-            // 存储token
             localStorage.setItem('token', res.data.data.token)
             this.success()
           }

@@ -36,7 +36,9 @@ export default {
           const { data } = await api.registerFn(captcha, phone, password, nickname)
           console.log(data)
           console.log('注册成功')
-          // 注册成功后跳转到首页
+          // 注册成功后将token存储到localStorage中
+          localStorage.setItem('token', data.data.token)
+          // 跳转到首页
           this.$router.push('/')
         } catch (error) {
           console.log('注册失败:', error)
