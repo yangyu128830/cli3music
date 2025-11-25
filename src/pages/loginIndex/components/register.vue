@@ -153,8 +153,8 @@ export default {
                 this.alertEvent(res.data.message || '注册失败')
               }
             }).catch(err => {
-            this.alertEvent('注册失败，请稍后重试')
-          })
+              this.alertEvent('注册失败，请稍后重试')
+            })
         }
       }).catch(err => {
         console.log(err)

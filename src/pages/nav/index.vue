@@ -23,6 +23,10 @@
                      class="nav-title ripple"
                      replace
                      to="/videoPage">视频</router-link>
+        <router-link tag="li"
+                     class="nav-title ripple"
+                     replace
+                     to="/member-center">会员中心</router-link>
       </ul>
       <div class="nav-right">
         <!-- 注意link时要加上/ 要不然会出现异常情况 -->

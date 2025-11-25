@@ -361,5 +361,11 @@ export default new Router({
     path: '/edit-profile',
     name: 'edit-profile',
     component: () => import('@/pages/editProfile/index')
+  },
+  // 注册页面
+  {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/pages/registerIndex/index')
   }]
 })

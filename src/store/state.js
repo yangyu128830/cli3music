@@ -16,5 +16,11 @@ export default {
   playingShow: true, // 是否显示转盘播放页面
   offsetLyric: 0, // 设置歌词偏移
   level: 0, // 用户等级
-  albumId: 0
+  albumId: 0,
+  userInfo: { // 用户信息
+    nickname: '',
+    avatar: '',
+    level: 1,
+    points: 0
+  }
 }
