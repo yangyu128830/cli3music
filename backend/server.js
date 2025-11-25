@@ -139,17 +139,7 @@ db.exec(createTables, (err) => {
 });
 
 // 中间件
-// 配置跨域
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
+app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -177,11 +167,54 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// 注册接口（已移至下方完整实现）
+// 注册接口
+app.post('/api/register', (req, res) => {
+  const { captcha, phone, password, nickname } = req.body;
+  
+  // 简单的验证码验证（实际项目中应使用Redis存储验证码）
+  if (captcha !== '1234') {
+    return res.status(400).json({ code: 400, message: '验证码错误' });
+  }
+  
+  // 检查手机号是否已经注册
+  const checkSql = 'SELECT * FROM users WHERE phone = ?';
+  db.get(checkSql, [phone], (err, row) => {
+    if (err) {
+      return res.status(500).json({ code: 500, message: '数据库查询错误' });
+    }
+    
+    if (row) {
+      return res.status(400).json({ code: 400, message: '手机号已经被注册' });
+    }
+    
+    // 密码加密
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    
+    // 创建用户
+    const insertSql = 'INSERT INTO users (phone, password, nickname) VALUES (?, ?, ?)';
+    db.run(insertSql, [phone, hashedPassword, nickname], function(err) {
+      if (err) {
+        return res.status(500).json({ code: 500, message: '用户创建失败' });
+      }
+      
+      // 生成JWT令牌
+      const token = jwt.sign({ userId: this.lastID }, secretKey, { expiresIn: '1h' });
+      
+      res.status(200).json({ 
+        code: 200, 
+        message: '注册成功', 
+        data: { 
+          token, 
+          user: { id: this.lastID, phone, nickname } 
+        } 
+      });
+    });
+  });
+});
 
 // 登录接口
-app.get('/api/login/cellphone', (req, res) => {
-  const { phone, password } = req.query;
+app.post('/api/login', (req, res) => {
+  const { phone, password } = req.body;
   
   if (!phone || !password) {
     return res.status(400).json({ code: 400, message: '手机号和密码不能为空' });
@@ -266,67 +299,6 @@ app.get('/api/top/playlist/highquality', (req, res) => {
   res.status(200).json({ code: 200, message: '获取成功', playlists });
 });
 
-// 获取登录状态接口
-app.get('/api/login/status', authenticateToken, (req, res) => {
-  // 查询用户信息
-  const sql = 'SELECT * FROM users WHERE id = ?';
-  db.get(sql, [req.user.userId], (err, user) => {
-    if (err) {
-      return res.status(500).json({ code: 500, message: '数据库查询错误' });
-    }
-    
-    if (!user) {
-      return res.status(404).json({ code: 404, message: '用户不存在' });
-    }
-    
-    res.status(200).json({ 
-      code: 200, 
-      message: '获取成功', 
-      data: { 
-        profile: { 
-          userId: user.id, 
-          nickname: user.nickname, 
-          avatarUrl: user.avatar, 
-          phone: user.phone
-        },
-        level: user.level
-      } 
-    });
-  });
-});
-
-// 获取用户详情接口
-app.get('/api/user/detail', (req, res) => {
-  const { uid } = req.query;
-  
-  // 查询用户信息
-  const sql = 'SELECT * FROM users WHERE id = ?';
-  db.get(sql, [uid], (err, user) => {
-    if (err) {
-      return res.status(500).json({ code: 500, message: '数据库查询错误' });
-    }
-    
-    if (!user) {
-      return res.status(404).json({ code: 404, message: '用户不存在' });
-    }
-    
-    res.status(200).json({ 
-      code: 200, 
-      message: '获取成功', 
-      data: { 
-        userId: user.id, 
-        nickname: user.nickname, 
-        avatar: user.avatar, 
-        phone: user.phone,
-        level: user.level,
-        points: user.points,
-        created_at: user.created_at,
-        updated_at: user.updated_at
-      } 
-    });
-  });
-});
-
 // 获取所有榜单内容摘要接口
 app.get('/api/toplist/detail', (req, res) => {
   // 模拟榜单数据
@@ -389,280 +361,21 @@ app.get('/api/recommend/resource', (req, res) => {
 
 // 获取新碟接口
 app.get('/api/top/album', (req, res) => {
-  const { limit = 10 } = req.query;
-  res.status(200).json({
-    code: 200,
-    message: '获取新碟成功',
-    albums: [
-      { id: 1, name: '专辑1', artist: '艺术家1', picUrl: 'https://example.com/pic1.jpg' },
-      { id: 2, name: '专辑2', artist: '艺术家2', picUrl: 'https://example.com/pic2.jpg' }
-    ].slice(0, limit)
-  });
-});
-
-// 歌单分类
-app.get('/api/playlist/catlist', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取歌单分类成功',
-    categories: { 1: '华语', 2: '欧美', 3: '日语', 4: '韩语' },
-    sub: []
-  });
-});
-
-// 热门歌单分类
-app.get('/api/playlist/hot', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取热门歌单分类成功',
-    tags: [{ name: '流行', id: 1 }, { name: '摇滚', id: 2 }, { name: '电子', id: 3 }]
-  });
-});
-
-// 热搜列表
-app.get('/api/search/hot/detail', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取热搜列表成功',
-    data: [{ searchWord: '热门歌曲1', score: 100 }, { searchWord: '热门歌曲2', score: 90 }]
-  });
-});
-
-// 电台榜
-app.get('/api/dj/toplist', (req, res) => {
-  const { limit = 100, offset = 0, type = 'hot' } = req.query;
-  res.status(200).json({
-    code: 200,
-    message: '获取电台榜成功',
-    list: [{ id: 1, name: '电台1', dj: 'DJ1', listeners: 10000 }, { id: 2, name: '电台2', dj: 'DJ2', listeners: 8000 }].slice(offset, offset + limit)
-  });
-});
-
-// 专辑内容
-app.get('/api/album', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取专辑内容成功',
-    album: { id: 1, name: '专辑1', artist: '艺术家1', songs: [] }
-  });
-});
-
-// 私人FM
-app.get('/api/personal_fm', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取私人FM成功',
-    data: []
-  });
-});
-
-// 心动模式
-app.get('/api/playmode/intelligence/list', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取心动模式成功',
-    data: []
-  });
-});
-
-// 喜欢歌曲列表
-app.get('/api/likelist', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取喜欢歌曲列表成功',
-    ids: []
-  });
-});
-
-// 用户信息
-app.get('/api/user/subcount', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取用户信息成功',
-    playlistCount: 0, followedCount: 0, followerCount: 0
-  });
-});
-
-// 用户播放记录
-app.get('/api/user/record', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取用户播放记录成功',
-    weekData: [],
-    allData: []
-  });
-});
-
-// 用户动态
-app.get('/api/user/event', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取用户动态成功',
-    events: []
-  });
-});
-
-// 用户歌单
-app.get('/api/user/playlist', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取用户歌单成功',
-    playlist: []
-  });
-});
-
-// 用户电台
-app.get('/api/user/dj', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取用户电台成功',
-    createdDjRadio: [],
-    subscribedDjRadios: []
-  });
-});
-
-// 收藏的专辑
-app.get('/api/album/sublist', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取收藏的专辑成功',
-    data: []
-  });
-});
-
-// 收藏的歌手
-app.get('/api/artist/sublist', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取收藏的歌手成功',
-    data: []
-  });
-});
-
-// 收藏的视频
-app.get('/api/mv/sublist', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取收藏的视频成功',
-    data: []
-  });
-});
-
-// 订阅的电台
-app.get('/api/dj/sublist', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取订阅的电台成功',
-    data: []
-  });
-});
-
-// 视频标签导航
-app.get('/api/video/group/list', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取视频标签导航成功',
-    data: []
-  });
-});
-
-// 视频标签详情
-app.get('/api/video/group', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取视频标签详情成功',
-    data: []
-  });
-});
-
-// 视频播放地址
-app.get('/api/video/url', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取视频播放地址成功',
-    urls: []
-  });
-});
-
-// 视频详情
-app.get('/api/video/detail', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取视频详情成功',
-    data: {}
-  });
-});
-
-// 相关视频
-app.get('/api/related/allvideo', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '获取相关视频成功',
-    data: []
-  });
-});
-
-// 签到
-app.get('/api/daily_signin', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '签到成功',
-    data: { point: 10 }
-  });
-});
-
-// 退出登录
-app.get('/api/logout', (req, res) => {
-  res.clearCookie('token');
-  res.status(200).json({
-    code: 200,
-    message: '退出登录成功'
-  });
-});
-
-// 查看歌曲是否可用
-app.get('/api/check/music', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '检查歌曲成功',
-    success: true
-  });
-});
-
-// 喜欢歌曲
-app.get('/api/like', (req, res) => {
-  res.status(200).json({
-    code: 200,
-    message: '喜欢歌曲成功'
-  });
-});
-
-// 获取新歌接口
-app.get('/api/top/song', (req, res) => {
-  const { type } = req.query;
-  
-  // 模拟新歌数据
-  const data = [
-    { id: 1, name: '新歌1', ar: [{ name: '歌手1' }], al: { name: '专辑1', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } },
-    { id: 2, name: '新歌2', ar: [{ name: '歌手2' }], al: { name: '专辑2', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } }
+  // 模拟新碟数据
+  const albums = [
+    { id: 1, name: '新专辑1', artist: { name: '歌手1' }, picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' },
+    { id: 2, name: '新专辑2', artist: { name: '歌手2' }, picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' }
   ];
   
-  res.status(200).json({ code: 200, message: '获取成功', data });
+  res.status(200).json({ code: 200, message: '获取成功', albums });
 });
 
 // 手机号是否被注册接口
 app.get('/api/cellphone/existence/check', (req, res) => {
   const { phone } = req.query;
   
-  // 查询数据库检查手机号是否被注册
-  const sql = 'SELECT * FROM users WHERE phone = ?';
-  db.get(sql, [phone], (err, row) => {
-    if (err) {
-      return res.status(500).json({ code: 500, message: '数据库查询错误' });
-    }
-    
-    res.status(200).json({ code: 200, message: '获取成功', exists: !!row });
-  });
+  // 模拟手机号检查，这里简单返回未注册
+  res.status(200).json({ code: 200, message: '获取成功', exists: false });
 });
 
 // 发送验证码接口
@@ -675,6 +388,9 @@ app.get('/api/captcha/sent', (req, res) => {
   // 存储验证码，有效期5分钟
   captchaStore.set(phone, { captcha, expiresAt: Date.now() + 5 * 60 * 1000 });
   
+  // 这里应该调用短信服务API发送验证码，现在只是模拟
+  console.log(`向手机号 ${phone} 发送验证码: ${captcha}`);
+  
   res.status(200).json({ code: 200, message: '验证码发送成功', captcha });
 });
 
@@ -682,81 +398,24 @@ app.get('/api/captcha/sent', (req, res) => {
 app.get('/api/captcha/verify', (req, res) => {
   const { phone, captcha } = req.query;
   
-  // 检查验证码
-  const captchaData = captchaStore.get(phone);
-  
-  if (!captchaData) {
-    return res.status(400).json({ code: 400, message: '验证码不存在或已过期' });
+  // 检查验证码是否存在
+  const stored = captchaStore.get(phone);
+  if (!stored) {
+    return res.status(400).json({ code: 400, message: '验证码已过期或未发送' });
   }
   
-  if (captchaData.captcha !== captcha) {
+  // 检查验证码是否过期
+  if (Date.now() > stored.expiresAt) {
+    captchaStore.delete(phone);
+    return res.status(400).json({ code: 400, message: '验证码已过期' });
+  }
+  
+  // 检查验证码是否正确
+  if (stored.captcha !== captcha) {
     return res.status(400).json({ code: 400, message: '验证码错误' });
   }
   
-  // 验证码正确，删除验证码
-  captchaStore.delete(phone);
-  
-  res.status(200).json({ code: 200, message: '验证码验证成功' });
-});
-
-// 获取每日推荐歌曲接口
-app.get('/api/recommend/songs', authenticateToken, (req, res) => {
-  // 模拟每日推荐歌曲数据
-  const data = { 
-    code: 200, 
-    message: '获取成功', 
-    dailySongs: [
-      { id: 1, name: '歌曲1', ar: [{ name: '歌手1' }], al: { name: '专辑1', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } },
-      { id: 2, name: '歌曲2', ar: [{ name: '歌手2' }], al: { name: '专辑2', picUrl: 'https://p2.music.126.net/6y-UleORITEDbvrOLV0Q8A==/5639395138885805.jpg' } }
-    ] 
-  };
-  
-  res.status(200).json(data);
-});
-
-// 获取歌曲url接口
-app.get('/api/song/url', (req, res) => {
-  const { id } = req.query;
-  
-  // 模拟歌曲url数据
-  const data = { 
-    code: 200, 
-    message: '获取成功', 
-    data: [{ id: id || 1, url: 'https://music.163.com/song/media/outer/url?id=' + (id || 1) + '.mp3' }] 
-  };
-  
-  res.status(200).json(data);
-});
-
-// 获取歌词接口
-app.get('/api/lyric', (req, res) => {
-  const { id } = req.query;
-  
-  // 模拟歌词数据
-  const lrc = { 
-    version: 1, 
-    lyric: '[00:00.000] 歌曲' + (id || 1) + '的歌词' 
-  };
-  
-  res.status(200).json({ code: 200, message: '获取成功', lrc });
-});
-
-// 验证验证码接口
-app.get('/api/captcha/verify', (req, res) => {
-  const { phone, captcha } = req.query;
-  
-  // 检查验证码
-  const captchaData = captchaStore.get(phone);
-  
-  if (!captchaData) {
-    return res.status(400).json({ code: 400, message: '验证码不存在或已过期' });
-  }
-  
-  if (captchaData.captcha !== captcha) {
-    return res.status(400).json({ code: 400, message: '验证码错误' });
-  }
-  
-  // 验证码正确，删除验证码
+  // 验证成功后删除验证码
   captchaStore.delete(phone);
   
   res.status(200).json({ code: 200, message: '验证码验证成功' });
