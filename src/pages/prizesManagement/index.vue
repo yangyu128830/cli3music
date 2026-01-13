@@ -65,12 +65,17 @@ export default {
     },
     getExchangeHistory () {
       // 调用API获取兑换记录
-      // 注意：当前后端没有专门的兑换记录接口，暂时使用示例数据
-      this.exchangeHistory = [
-        { prizeName: '月度VIP', exchangeTime: '2023-05-15', status: '已发放' },
-        { prizeName: '现金券', exchangeTime: '2023-05-10', status: '已使用' },
-        { prizeName: '周边商品', exchangeTime: '2023-04-25', status: '已发货' }
-      ]
+      api.getExchangeHistory().then(res => {
+        if (res.data && res.data.code === 200) {
+          this.exchangeHistory = res.data.records.map(record => ({
+            prizeName: record.prize_name,
+            exchangeTime: new Date(record.exchange_time).toLocaleDateString(),
+            status: record.status
+          }))
+        }
+      }).catch(err => {
+        console.error('获取兑换记录失败:', err)
+      })
     }
   }
 }

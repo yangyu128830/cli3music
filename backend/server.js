@@ -767,13 +767,13 @@ app.get('/api/captcha/verify', (req, res) => {
 
 // 手机号注册接口
 app.get('/api/register/cellphone', (req, res) => {
-  const { phone, password, nickname } = req.query;
+  const { phone, password, nickname, captcha } = req.query;
   
-  // 暂时跳过验证码验证，后续再完善
-  // const stored = captchaStore.get(phone);
-  // if (!stored || Date.now() > stored.expiresAt || stored.captcha !== captcha) {
-  //   return res.status(400).json({ code: 400, message: '验证码错误或已过期' });
-  // }
+  // 验证码验证
+  const stored = captchaStore.get(phone);
+  if (!stored || Date.now() > stored.expiresAt || stored.captcha !== captcha) {
+    return res.status(400).json({ data: { code: 400, message: '验证码错误或已过期' } });
+  }
   
   // 检查手机号是否已经注册
   const checkSql = 'SELECT * FROM users WHERE phone = ?';
@@ -1222,12 +1222,31 @@ app.get('/api/user/prizes', authenticateToken, (req, res) => {
     SELECT p.*, up.obtained_at FROM user_prizes up
     JOIN prizes p ON up.prize_id = p.id
     WHERE up.user_id = ?
+    ORDER BY up.obtained_at DESC
   `;
   db.all(sql, [userId], (err, prizes) => {
     if (err) {
       return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
     }
     res.status(200).json({ data: { code: 200, message: '获取成功', prizes } });
+  });
+});
+
+// 获取用户兑换记录
+app.get('/api/user/exchange-history', authenticateToken, (req, res) => {
+  const userId = req.user.id;
+  const sql = `
+    SELECT p.name AS prize_name, up.obtained_at AS exchange_time, '已发放' AS status
+    FROM user_prizes up
+    JOIN prizes p ON up.prize_id = p.id
+    WHERE up.user_id = ?
+    ORDER BY up.obtained_at DESC
+  `;
+  db.all(sql, [userId], (err, records) => {
+    if (err) {
+      return res.status(500).json({ data: { code: 500, message: '服务器错误' } });
+    }
+    res.status(200).json({ data: { code: 200, message: '获取成功', records } });
   });
 });
 

@@ -1,84 +1,5 @@
 import axios from 'axios'
-import {
-  albumCollec,
-  bannerSwiper,
-  recSongList,
-  highquality,
-  recSongs,
-  topList,
-  dateRecSongList,
-  newDish,
-  phoneLogin,
-  albumDetail,
-  sendVerify,
-  verify,
-  phoneRegistered,
-  loginStatus,
-  userRecord,
-  userInfo,
-  playlist,
-  userDj,
-  hotSearchList,
-  search,
-  defaultSearch,
-  suggestSearch,
-  songUrl,
-  checkSong,
-  songLyric,
-  idxList,
-  addOrDeletePlaylist,
-  addPlaylist,
-  deletePlaylist,
-  heartMode,
-  favoriteAlbums,
-  favoriteArtists,
-  favoriteVideos,
-  djSublist,
-  newSongs,
-  getDishInfo,
-  personalFm,
-  singerClass,
-  logout,
-  radioRecommendations,
-  boutiqueRecommendations,
-  djClassification,
-  djClassificationInfo,
-  djProgram,
-  djDetail,
-  djPayGift,
-  djSub,
-  djBanner,
-  djToplist,
-  djHotToplist,
-  likeMusicList,
-  likeMusic,
-  userDetail,
-  signIn,
-  friend,
-  getVideoTag,
-  getVideoGroup,
-  commentPlaylist,
-  commentLike,
-  commentAlbum,
-  userEvent,
-  pushOrDeleteCom,
-  getVideoUrl,
-  register,
-  commentDj,
-  getVideoDetail,
-  getVideoRelated,
-  getVideoComments,
-  resourceLike,
-  getUserInfo,
-  updateUserInfo,
-  changePassword,
-  checkPassword,
-  recommendNickname,
-  getPoints,
-  getPrizes,
-  getUserPrizes,
-  redeemPrize
-} from './config'
+import { albumCollec, bannerSwiper, recSongList, highquality, recSongs, topList, dateRecSongList, newDish, phoneLogin, albumDetail, sendVerify, verify, phoneRegistered, loginStatus, userRecord, userInfo, playlist, userDj, hotSearchList, search, defaultSearch, suggestSearch, songUrl, checkSong, songLyric, idxList, addOrDeletePlaylist, addPlaylist, deletePlaylist, heartMode, favoriteAlbums, favoriteArtists, favoriteVideos, djSublist, newSongs, getDishInfo, personalFm, singerClass, logout, radioRecommendations, boutiqueRecommendations, djClassification, djClassificationInfo, djProgram, djDetail, djPayGift, djSub, djBanner, djToplist, djHotToplist, likeMusicList, likeMusic, userDetail, signIn, friend, getVideoTag, getVideoGroup, commentPlaylist, commentLike, commentAlbum, userEvent, pushOrDeleteCom, getVideoUrl, register, commentDj, getVideoDetail, getVideoRelated, getVideoComments, resourceLike, getUserInfo, updateUserInfo, changePassword, checkPassword, recommendNickname, getPoints, getPrizes, getUserPrizes, redeemPrize, getExchangeHistory } from './config'
 axios.defaults.withCredentials = true
 // 添加请求拦截器
 axios.interceptors.request.use(config => {
@@ -219,7 +140,7 @@ export default {
    * 调用此接口 ,传入手机号码, 可发送验证码
    * @param {number} phone 手机号
    */
-  sendVerifyFn (phone) {
+  sendVerify (phone) {
     return axios.get(sendVerify, {
       params: {
         phone
@@ -336,8 +257,15 @@ export default {
    * 调用此接口 ,传入手机号码和验证码,密码,昵称, 可注册网易云音乐账号(同时可修改密码)
    * @param {*} params 参数对象
    */
-  register (params) {
-    return axios.get(register, { params })
+  registerFn (captcha, phone, password, nickname) {
+    return axios.get(register, {
+      params: {
+        captcha,
+        phone,
+        password,
+        nickname
+      }
+    })
   },
   /**
    * 登陆后调用此接口 , 传入用户 id, 可以获取用户歌单
@@ -1045,5 +973,8 @@ export default {
    */
   redeemPrizeFn (prizeId) {
     return axios.post(redeemPrize, { prizeId })
+  },
+  getExchangeHistory () {
+    return axios.get(getExchangeHistory)
   }
 }
